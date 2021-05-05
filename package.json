@@ -1,0 +1,17 @@
+{
+  "name": "react-use-fp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Rossh87 <hunter.dev.87@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fp-ts": "^2.10.4",
+    "react": "^17.0.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/react": "^17.0.3"
+  }
+}
