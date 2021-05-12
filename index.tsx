@@ -54,6 +54,13 @@ interface ComposableMiddleware<A extends Action<any>> {
 	(dispatch: Dispatch<A>): (next: Dispatch<A>) => (action: A) => void;
 }
 
+export interface DependencyCreator<
+	A,
+	D extends { dispatch: Dispatch<A> } = { dispatch: Dispatch<A> }
+> {
+	(dispatch: Dispatch<A>): D;
+}
+
 export const useFPMiddleware = <S, A extends Action<any>>(
 	r: Reducer<S, A>,
 	initialState: S

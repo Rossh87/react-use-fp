@@ -1,0 +1,1 @@
+##A convenience hook for using fp-ts pure functions in React applications.
