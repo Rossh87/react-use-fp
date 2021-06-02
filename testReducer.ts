@@ -1,4 +1,4 @@
-import React, { Reducer } from 'react';
+import { Reducer } from 'react';
 
 interface ReducerState {
 	count: number;
@@ -12,11 +12,13 @@ export interface SetCountAction extends Action<number> {
 	type: 'SET_COUNT';
 }
 
-export interface InitSetCountAction extends Action<undefined> {
+export interface InitSetCountAction extends Action<number> {
 	type: 'DO_HANDLER';
+	payload?: number;
 }
 
 export type CountAction = SetCountAction | InitSetCountAction;
+
 export const defaultState: ReducerState = {
 	count: 0,
 };
@@ -26,7 +28,7 @@ const reducer: Reducer<ReducerState, CountAction> = (state, action) => {
 		case 'SET_COUNT':
 			return {
 				...state,
-				count: action.payload,
+				count: action.payload as number,
 			};
 		default:
 			return state;
