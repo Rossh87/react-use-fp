@@ -8,7 +8,7 @@ import {
 	DependencyCreator,
 	PayloadDispatchReader,
 	PayloadDependencyReader,
-} from './index';
+} from '../index';
 
 describe('handlers that return an IO type', () => {
 	it('correctly sets state via reducer', () => {

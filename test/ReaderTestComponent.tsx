@@ -1,5 +1,5 @@
 import React, { Dispatch } from 'react';
-import { useFPMiddleware } from './index';
+import { useFPMiddleware } from '../index';
 import countReducer, { defaultState, CountAction } from './testReducer';
 
 interface TestProps {
