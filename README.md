@@ -220,4 +220,4 @@ const CountComponent: FunctionComponent = (props) => {
 	);
 };
 ```
-Other than the third argument passed to `withDispatch`, this kind of action handler is works identically to handlers that only depend on dispatch.  To pass data into an action handler with advanced dependencies, simply add the desired data as a payload in the action that the handler is associated with.
+Other than the third argument passed to `withDispatch`, this kind of action handler works identically to handlers that only depend on dispatch.  To pass data into an action handler with advanced dependencies, simply add the desired data as a payload in the action that the handler is associated with.
