@@ -6,9 +6,9 @@ import { Task } from 'fp-ts/lib/Task';
 import { CountAction } from './testReducer';
 import {
 	DependencyCreator,
-	PayloadDispatchReader,
-	PayloadDependencyReader,
-} from '../index';
+	PayloadDispatchDependencyReader,
+	PayloadProductDependencyReader,
+} from '../src/types';
 
 describe('handlers that return a Task type', () => {
 	it('correctly sets state via reducer', () => {
@@ -57,11 +57,11 @@ describe('handlers that return a Task type', () => {
 	it('correctly uses payload from initiating action for DispatchReader', () => {
 		const payload: number = 42;
 
-		const payloadHandler: PayloadDispatchReader<CountAction, number> =
-			(payload) => (dispatch) => () =>
-				new Promise((res) =>
-					res(dispatch({ type: 'SET_COUNT', payload }))
-				);
+		const payloadHandler: PayloadDispatchDependencyReader<
+			CountAction,
+			number
+		> = (payload) => (dispatch) => () =>
+			new Promise((res) => res(dispatch({ type: 'SET_COUNT', payload })));
 
 		render(<ReaderTestComponent handler={payloadHandler} payload={42} />);
 
@@ -79,12 +79,11 @@ describe('handlers that return a Task type', () => {
 			toAdd: number;
 		}
 
-		const makeDependencies: DependencyCreator<
-			CountAction,
-			TestDependencies
-		> = (dispatch) => ({ dispatch, toAdd: 2 });
+		const makeDependencies: DependencyCreator<CountAction> = (
+			dispatch
+		) => ({ dispatch, toAdd: 2 });
 
-		const payloadHandler: PayloadDependencyReader<
+		const payloadHandler: PayloadProductDependencyReader<
 			TestDependencies,
 			number
 		> =

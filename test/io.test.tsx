@@ -6,9 +6,9 @@ import { IO } from 'fp-ts/lib/IO';
 import { CountAction } from './testReducer';
 import {
 	DependencyCreator,
-	PayloadDispatchReader,
-	PayloadDependencyReader,
-} from '../index';
+	PayloadDispatchDependencyReader,
+	PayloadProductDependencyReader,
+} from '../src/types';
 
 describe('handlers that return an IO type', () => {
 	it('correctly sets state via reducer', () => {
@@ -53,9 +53,11 @@ describe('handlers that return an IO type', () => {
 	it('correctly uses payload from initiating action for DispatchReader', () => {
 		const payload: number = 42;
 
-		const payloadHandler: PayloadDispatchReader<CountAction, number> =
-			(payload) => (dispatch) => () =>
-				dispatch({ type: 'SET_COUNT', payload });
+		const payloadHandler: PayloadDispatchDependencyReader<
+			CountAction,
+			number
+		> = (payload) => (dispatch) => () =>
+			dispatch({ type: 'SET_COUNT', payload });
 
 		render(<ReaderTestComponent handler={payloadHandler} payload={42} />);
 
@@ -73,12 +75,11 @@ describe('handlers that return an IO type', () => {
 			toAdd: number;
 		}
 
-		const makeDependencies: DependencyCreator<
-			CountAction,
-			PayloadTestDependencies
-		> = (dispatch) => ({ dispatch, toAdd: 2 });
+		const makeDependencies: DependencyCreator<CountAction> = (
+			dispatch
+		) => ({ dispatch, toAdd: 2 });
 
-		const payloadHandler: PayloadDependencyReader<
+		const payloadHandler: PayloadProductDependencyReader<
 			PayloadTestDependencies,
 			number
 		> =
