@@ -1,4 +1,4 @@
-import { Dispatch } from 'react';
+import { Dispatch, ReducerAction, Reducer } from 'react';
 import { Reader } from 'fp-ts/Reader';
 import { Task } from 'fp-ts/lib/Task';
 import { IO } from 'fp-ts/lib/IO';
@@ -7,6 +7,25 @@ export interface Action<T> {
 	type: string;
 	payload?: T;
 }
+
+// init stuff
+type GetDependencyType<A, D> = D extends (...args: any[]) => infer R
+	? R
+	: Dispatch<A>;
+
+// We need a union with Record type to satisfy fp-ts
+export type ActionMap<
+	S,
+	A extends { type: string; payload?: any },
+	D extends DependencyCreator<A> = DependencyCreator<A>
+> = {
+	[key in ReducerAction<Reducer<S, A>>['type']]?: HandlerKinds<
+		A,
+		GetDependencyType<A, D>,
+		A['payload']
+	>;
+} &
+	Record<string, any>;
 
 // // dependency stuff
 export type DependencyType = 'dispatch' | 'product';

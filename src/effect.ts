@@ -6,6 +6,7 @@ import {
 	HandlerDependencies,
 	DependencyCreator,
 	PreEffect,
+	EffectKinds,
 } from './types';
 import {
 	isDependencyCreator,
@@ -27,18 +28,22 @@ import { map as OMap, fromPredicate } from 'fp-ts/Option';
 const tagEffect = <A extends Action<any>, D extends HandlerDependencies<A>, T>({
 	dependencies,
 	payload,
-}: Pick<Effect<A, D, T>, 'dependencies' | 'payload'>) => {
+}: Pick<Effect<A, D, T>, 'dependencies' | 'payload'>): EffectKinds => {
+	console.log('partial payload is:', payload);
 	const hasPayload = !!payload;
 
 	const hasProductDependencies = typeof dependencies === 'object';
 
-	return hasPayload
+	const res = hasPayload
 		? hasProductDependencies
 			? 'payloadProductDependency'
 			: 'payloadDispatchDependency'
 		: hasProductDependencies
 		? 'productDependency'
 		: 'dispatchDependency';
+	console.log('tagging with:', res);
+
+	return res;
 };
 
 export const toPartialEffect =

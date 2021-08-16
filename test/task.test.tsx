@@ -1,5 +1,5 @@
 import React, { Dispatch } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import ReaderTestComponent from './ReaderTestComponent';
 import { Reader } from 'fp-ts/lib/Reader';
 import { Task } from 'fp-ts/lib/Task';
@@ -11,19 +11,19 @@ import {
 } from '../src/types';
 
 describe('handlers that return a Task type', () => {
-	it('correctly sets state via reducer', () => {
-		const handler: Reader<Dispatch<CountAction>, Task<void>> =
+	it.only('correctly sets state via reducer', () => {
+		const handler: Reader<Dispatch<CountAction>, Task<any>> =
 			(dispatch) => () =>
-				new Promise((res) =>
-					res(dispatch({ type: 'SET_COUNT', payload: 42 }))
-				);
+				new Promise((res) => {
+					res(dispatch({ type: 'SET_COUNT', payload: 42 }));
+				}).catch((e) => console.log('faild in handler:', e));
 
 		render(<ReaderTestComponent handler={handler} />);
 
 		const button = screen.getByText('clicky');
 		const count = screen.getByTestId('countDisplay');
 
-		fireEvent.click(button);
+		act(() => fireEvent.click(button));
 
 		expect(count.innerHTML).toEqual('42');
 	});

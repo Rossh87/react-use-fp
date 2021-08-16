@@ -1,5 +1,5 @@
 import React, { Dispatch } from 'react';
-import { useFPMiddleware } from '../src/index';
+import { useFPReducer } from '../src/index';
 import { AcceptObserver } from '../src/types';
 import countReducer, { defaultState, CountAction } from './testReducer';
 
@@ -16,13 +16,11 @@ const ReaderTestComponent: React.FunctionComponent<TestProps> = ({
 	payload,
 	acceptObserver,
 }) => {
-	const [countState, countDispatch, addHandler] = useFPMiddleware(
-		countReducer,
+	const [countState, countDispatch] = useFPReducer(
 		defaultState,
+		countReducer,
 		acceptObserver
-	);
-
-	addHandler<Dispatch<CountAction>>('DO_HANDLER')(handler, makeDependencies);
+	)({ DO_HANDLER: handler }, makeDependencies);
 
 	const onClick = () => countDispatch({ type: 'DO_HANDLER', payload });
 
