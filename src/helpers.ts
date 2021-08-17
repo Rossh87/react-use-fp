@@ -1,10 +1,19 @@
 import { Dispatch } from 'react';
-import { fromPredicate, map, fold } from 'fp-ts/Option';
+import {
+	fromPredicate,
+	map,
+	fold,
+	fromNullable,
+	getOrElse,
+} from 'fp-ts/Option';
 import { pipe, flow } from 'fp-ts/lib/function';
 import { chainFirst } from 'fp-ts/lib/Identity';
 import { lookup } from 'fp-ts/Record';
 import { isPromise } from './guards';
 import { ObservedActions, Observer, PendingTracker, Action } from './types';
+import { filter } from 'fp-ts/Array';
+import { fold as BoolFold } from 'fp-ts/boolean';
+import { Predicate } from 'fp-ts/lib/Predicate';
 
 // side-effectful, but contained by main function
 export const makePendingPromiseTracker =
@@ -13,11 +22,17 @@ export const makePendingPromiseTracker =
 			maybePromise,
 			fromPredicate(isPromise),
 			map((p) => {
-				console.log('promise tracker firing...');
 				tracker.pending += 1;
+				console.log(
+					'incremented promise tracker, now equals',
+					tracker.pending
+				);
 				p.then(() => {
-					console.log('decrementing promise tracker...');
-					tracker.pending -= 1;
+					tracker.pending = tracker.pending - 1;
+					console.log(
+						'decrementing promise tracker, now equals:',
+						tracker.pending
+					);
 				});
 			})
 		);
@@ -27,6 +42,18 @@ export const makeObservableDispatch =
 	(matched: A['type']) =>
 	(dispatch: Dispatch<A>) =>
 		flow(pipe(setObserved(record)(matched), chainFirst), dispatch);
+
+export const makeSubscribableDispatch =
+	<A>(sub?: (a: A) => void) =>
+	(dispatch: Dispatch<A>): Dispatch<A> =>
+		pipe(
+			sub,
+			fromNullable,
+			fold(
+				() => dispatch,
+				(sub) => flow(chainFirst(sub), dispatch)
+			)
+		);
 
 export const delay = (waitTime: number): Promise<NodeJS.Timeout> =>
 	new Promise((res) => {
@@ -43,13 +70,13 @@ const failedToResolveMessage =
 // TODO: this COULD be buggy with multiple handlers initiating promises in sequence, esp.
 // if tests are waiting on live API calls that may take a while...
 export const makeObserver =
-	({ pending }: PendingTracker) =>
+	(tracker: PendingTracker) =>
 	<A extends Action<any>>(state: ObservedActions<A>): Observer<A> =>
 	async () => {
 		let retries = 0;
 
-		while (pending > 0) {
-			console.log('retrying with pending set to: ', pending);
+		while (tracker.pending > 0) {
+			console.log('retrying with pending set to: ', tracker.pending);
 			if (retries < 25) {
 				await delay(200);
 				retries++;
@@ -59,7 +86,7 @@ export const makeObserver =
 			}
 		}
 		console.log('no more pending, returning observed value:', state);
-		return state;
+		return Object.assign({}, state);
 	};
 
 export const setObserved =
@@ -80,3 +107,15 @@ export const setObserved =
 			)
 		);
 	};
+
+export const filterAndSetActionTypes =
+	<A>(set: Set<A>) =>
+	(members: A[]) =>
+		members.filter((str) => {
+			if (set.has(str)) {
+				return false;
+			}
+
+			set.add(str);
+			return true;
+		});

@@ -10,7 +10,7 @@ import {
 	PayloadFPEffect,
 } from './types';
 import { isFPEffect, isPayloadFPEffect } from './guards';
-import { bind, Do } from 'fp-ts/Identity';
+import { bind, Do, Identity } from 'fp-ts/Identity';
 import { Dispatch } from 'react';
 import { FPEffectCallStrat, PayloadFPEffectCallStrat } from './strategies';
 import { fromNullable, fold, map as OMap, fromPredicate } from 'fp-ts/Option';
@@ -40,11 +40,7 @@ export const toPartialEffect =
 
 export const toMiddleware =
 	<A extends Action<any>>(promiseTracker: (a: unknown) => void) =>
-	(
-		makeObservableDispatch: (
-			matched: A['type']
-		) => (dispatch: Dispatch<A>) => Dispatch<A>
-	) =>
+	(subscribableDispatch: (a: Dispatch<A>) => Dispatch<A>) =>
 	(pe: PreEffect<A>) =>
 	(dispatch: Dispatch<A>) =>
 	(next: Dispatch<A>) =>
@@ -56,16 +52,8 @@ export const toMiddleware =
 				pipe(
 					pe,
 					bind('dependencies', ({ createDependencies }) => {
-						const observableDispatch = makeObservableDispatch(
-							action.type
-						)(dispatch);
-
-						console.log(' disp is:', typeof dispatch);
-
-						console.log(
-							'observable disp is:',
-							typeof observableDispatch
-						);
+						const subscribedDispatch =
+							subscribableDispatch(dispatch);
 
 						// wrangle dispatch function into an object if no
 						// createDependencies function was passed in
@@ -73,8 +61,8 @@ export const toMiddleware =
 							createDependencies,
 							fromNullable,
 							fold(
-								() => ({ dispatch: observableDispatch }),
-								(c) => c(observableDispatch)
+								() => ({ dispatch: subscribedDispatch }),
+								(c) => c(subscribedDispatch)
 							)
 						);
 					}),

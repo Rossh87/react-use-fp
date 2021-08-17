@@ -7,19 +7,19 @@ interface TestProps {
 	handler: any;
 	makeDependencies?: any;
 	payload?: number;
-	acceptObserver?: AcceptObserver;
+	subscriber?: (a: any) => void;
 }
 
 const ReaderTestComponent: React.FunctionComponent<TestProps> = ({
 	handler,
 	makeDependencies,
 	payload,
-	acceptObserver,
+	subscriber,
 }) => {
 	const [countState, countDispatch] = useFPReducer(
 		defaultState,
 		countReducer,
-		acceptObserver
+		subscriber
 	)({ DO_HANDLER: handler }, makeDependencies);
 
 	const onClick = () => countDispatch({ type: 'DO_HANDLER', payload });

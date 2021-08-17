@@ -1,10 +1,18 @@
 import React, { Dispatch } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ReaderTestComponent from './ReaderTestComponent';
-import { Reader } from 'fp-ts/lib/Reader';
-import { IO } from 'fp-ts/lib/IO';
 import { CountAction } from './testReducer';
-import { DependencyCreator, FPReader, PayloadFPReader } from '../src/types';
+import {
+	AcceptObserver,
+	DependencyCreator,
+	FPReader,
+	PayloadFPReader,
+} from '../src/types';
+import { resetInternals } from '../src/index';
+
+beforeEach(() => {
+	resetInternals();
+});
 
 describe('handlers that return an IO type', () => {
 	it('correctly sets state via reducer', () => {
@@ -51,8 +59,14 @@ describe('handlers that return an IO type', () => {
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it('correctly uses payload from initiating action for DispatchReader', () => {
+	it('correctly uses payload from initiating action for DispatchReader', async () => {
 		const payload: number = 42;
+
+		let observer;
+
+		const acceptObserver: AcceptObserver = (a) => {
+			observer = a;
+		};
 
 		const payloadHandler: PayloadFPReader<CountAction, number> =
 			(payload) =>
@@ -61,17 +75,26 @@ describe('handlers that return an IO type', () => {
 				dispatch({ type: 'SET_COUNT', payload });
 			};
 
-		render(<ReaderTestComponent handler={payloadHandler} payload={42} />);
+		render(
+			<ReaderTestComponent
+				handler={payloadHandler}
+				payload={42}
+				acceptObserver={acceptObserver}
+			/>
+		);
 
 		const button = screen.getByText('clicky');
 		const count = screen.getByTestId('countDisplay');
 
 		fireEvent.click(button);
 
+		const res = await observer();
+
+		console.log('observed from test:', res);
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it.only('correctly uses payload from initiating action for DependencyReader', () => {
+	it('correctly uses payload from initiating action for DependencyReader', () => {
 		interface PayloadTestDependencies {
 			dispatch: Dispatch<CountAction>;
 			toAdd: number;

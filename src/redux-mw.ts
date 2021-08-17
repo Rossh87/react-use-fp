@@ -16,43 +16,43 @@ import {
 	makePendingPromiseTracker,
 	makeObservableDispatch,
 	makeObserver,
-	filterAndSetActionTypes,
-	makeSubscribableDispatch,
 } from './helpers';
 import { toMiddleware, toPartialEffect } from './effect';
 import { fromNullable, map as OMap } from 'fp-ts/Option';
-import { map as ArrMap, filter } from 'fp-ts/Array';
+import { keys } from 'fp-ts/Record';
+import { map as ArrMap } from 'fp-ts/Array';
+import { Middleware } from 'redux';
 
 // mutable state for handlers
-let handlers: ComposableMiddleware<any>[] = [];
-let observed: ObservedActions<any> = {};
+const handlers: ComposableMiddleware<any>[] = [];
+const observed: ObservedActions<any> = {};
 const pendingPromises: PendingTracker = { pending: 0 };
-let usedActions = new Set<string>();
+let isFirstRun = true;
+let dispatch: Dispatch<any>;
 
-export const resetInternals = () => {
-	handlers = [];
-	observed = {};
-	usedActions.clear();
-	pendingPromises.pending = 0;
-};
-
-export const useFPReducer =
+export const createFPMiddleware =
 	<
 		S,
 		A extends { type: string; payload?: any },
 		D extends DependencyCreator<A>
 	>(
-		initial: S,
-		reducer: Reducer<S, A>,
-		subscriber?: (a: A) => void
-	) =>
-	(actionMap: ActionMap<S, A>, createDependencies?: D) => {
-		const [state, baseDispatch] = useReducer(reducer, initial);
-
+		actionMap: ActionMap<S, A>,
+		createDependencies?: D
+	): Middleware<> =>
+	(store) =>
+	(next) =>
+	(action: A) => {
 		// mutable state for tracking execution
 		const promiseResolutionTracker =
 			makePendingPromiseTracker(pendingPromises);
-		const subbableDispatch = makeSubscribableDispatch(subscriber);
+		const odm = makeObservableDispatch(observed);
+
+		// pass back function to read execution state
+		pipe(
+			acceptObserver,
+			fromNullable,
+			OMap((fn) => pipe(makeObserver(pendingPromises)(observed), fn))
+		);
 
 		// begin business logic
 		const addMiddleware = (mw: ComposableMiddleware<A>) =>
@@ -66,29 +66,27 @@ export const useFPReducer =
 			) =>
 				pipe(
 					toPartialEffect<A>(handler)(type)(createDependencies),
-					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch),
+					toMiddleware<A>(promiseResolutionTracker)(odm),
 					addMiddleware
 				);
 
-		// setup the middlewares here.  Only add a middleware
-		// handler for action types we haven't seen before
-		pipe(
-			Object.keys(actionMap),
-			(x) => {
-				console.log('keys are:', x);
-				return x;
-			},
-			filterAndSetActionTypes(usedActions),
-			ArrMap((key) => {
-				withDispatch(key)(actionMap[key], createDependencies);
-			})
-		);
+		// setup the middlewares here
+		if (isFirstRun) {
+			pipe(
+				keys(actionMap),
+				ArrMap((key) => {
+					withDispatch(key)(actionMap[key], createDependencies);
+				})
+			);
 
-		let dispatch = (a: A) =>
-			handlers.reduceRight(
-				(next, fn) => fn(baseDispatch)(next),
-				baseDispatch
-			)(a);
+			dispatch = (a: A) =>
+				handlers.reduceRight(
+					(next, fn) => fn(baseDispatch)(next),
+					baseDispatch
+				)(a);
+
+			isFirstRun = false;
+		}
 
 		return [state, dispatch] as const;
 	};
