@@ -26,8 +26,8 @@ interface DispatchDependency<A> {
 
 export interface ReaderDependencies<A> extends DispatchDependency<A> {}
 
-export interface DependencyCreator<A, D = {}> {
-	(dispatch: Dispatch<A>): ReaderDependencies<A> & D;
+export interface DependencyCreator<D> {
+	(dispatch: Dispatch<any>): DispatchDependency<any> & D;
 }
 
 // handler stuff
