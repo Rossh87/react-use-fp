@@ -1,19 +1,23 @@
 import React, { Dispatch } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ReaderTestComponent from './ReaderTestComponent';
-import { Reader } from 'fp-ts/lib/Reader';
-import { IO } from 'fp-ts/lib/IO';
 import { CountAction } from './testReducer';
 import {
 	DependencyCreator,
-	PayloadDispatchReader,
-	PayloadDependencyReader,
-} from '../index';
+	FPReader,
+	PayloadFPReader,
+} from '../src/types';
+import { resetInternals } from '../src/index';
+
+beforeEach(() => {
+	resetInternals();
+});
 
 describe('handlers that return an IO type', () => {
 	it('correctly sets state via reducer', () => {
-		const handler: Reader<Dispatch<CountAction>, IO<void>> =
-			(dispatch) => () =>
+		const handler: FPReader<CountAction> =
+			({ dispatch }) =>
+			() =>
 				dispatch({ type: 'SET_COUNT', payload: 42 });
 
 		render(<ReaderTestComponent handler={handler} />);
@@ -27,13 +31,17 @@ describe('handlers that return an IO type', () => {
 	});
 
 	it('injects dependencies correctly', () => {
-		const makeDependencies: DependencyCreator<CountAction> = (
+		const makeDependencies: DependencyCreator<{ newCount: number }> = (
 			dispatch
 		) => ({ dispatch, newCount: 42 });
 
 		const handler =
-			(a: { dispatch: Dispatch<CountAction>; newCount: number }) => () =>
-				a.dispatch({ type: 'SET_COUNT', payload: a.newCount });
+			(a: { dispatch: Dispatch<CountAction>; newCount: number }) =>
+			() => {
+				{
+					a.dispatch({ type: 'SET_COUNT', payload: a.newCount });
+				}
+			};
 
 		render(
 			<ReaderTestComponent
@@ -50,14 +58,19 @@ describe('handlers that return an IO type', () => {
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it('correctly uses payload from initiating action for DispatchReader', () => {
+	it('correctly uses payload from initiating action for DispatchReader', async () => {
 		const payload: number = 42;
 
-		const payloadHandler: PayloadDispatchReader<CountAction, number> =
-			(payload) => (dispatch) => () =>
+		const payloadHandler: PayloadFPReader<CountAction, number> =
+			(payload) =>
+			({ dispatch }) =>
+			() => {
 				dispatch({ type: 'SET_COUNT', payload });
+			};
 
-		render(<ReaderTestComponent handler={payloadHandler} payload={42} />);
+		render(
+			<ReaderTestComponent handler={payloadHandler} payload={payload} />
+		);
 
 		const button = screen.getByText('clicky');
 		const count = screen.getByTestId('countDisplay');
@@ -68,19 +81,21 @@ describe('handlers that return an IO type', () => {
 	});
 
 	it('correctly uses payload from initiating action for DependencyReader', () => {
+		const payload = 40;
+
 		interface PayloadTestDependencies {
 			dispatch: Dispatch<CountAction>;
 			toAdd: number;
 		}
 
-		const makeDependencies: DependencyCreator<
-			CountAction,
-			PayloadTestDependencies
-		> = (dispatch) => ({ dispatch, toAdd: 2 });
+		const makeDependencies: DependencyCreator<PayloadTestDependencies> = (
+			dispatch
+		) => ({ dispatch, toAdd: 2 });
 
-		const payloadHandler: PayloadDependencyReader<
-			PayloadTestDependencies,
-			number
+		const payloadHandler: PayloadFPReader<
+			CountAction,
+			number,
+			PayloadTestDependencies
 		> =
 			(payload) =>
 			({ dispatch, toAdd }) =>
@@ -93,7 +108,7 @@ describe('handlers that return an IO type', () => {
 		render(
 			<ReaderTestComponent
 				handler={payloadHandler}
-				payload={40}
+				payload={payload}
 				makeDependencies={makeDependencies}
 			/>
 		);

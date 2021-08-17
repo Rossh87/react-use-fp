@@ -1,24 +1,25 @@
-import React, { Dispatch } from 'react';
-import { useFPMiddleware } from '../index';
-import countReducer, { defaultState, CountAction } from './testReducer';
+import React from 'react';
+import { useFPReducer } from '../src/index';
+import countReducer, { defaultState } from './testReducer';
 
 interface TestProps {
 	handler: any;
 	makeDependencies?: any;
 	payload?: number;
+	subscriber?: (a: any) => void;
 }
 
 const ReaderTestComponent: React.FunctionComponent<TestProps> = ({
 	handler,
 	makeDependencies,
 	payload,
+	subscriber,
 }) => {
-	const [countState, countDispatch, addHandler] = useFPMiddleware(
+	const [countState, countDispatch] = useFPReducer(
+		defaultState,
 		countReducer,
-		defaultState
-	);
-
-	addHandler<Dispatch<CountAction>>('DO_HANDLER')(handler, makeDependencies);
+		subscriber
+	)({ DO_HANDLER: handler }, makeDependencies);
 
 	const onClick = () => countDispatch({ type: 'DO_HANDLER', payload });
 
