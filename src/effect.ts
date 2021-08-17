@@ -2,56 +2,35 @@ import { pipe } from 'fp-ts/lib/function';
 import {
 	Action,
 	Effect,
-	HandlerKinds,
-	HandlerDependencies,
 	DependencyCreator,
 	PreEffect,
 	EffectKinds,
+	Handler,
+	FPEffect,
+	PayloadFPEffect,
 } from './types';
-import {
-	isDependencyCreator,
-	isDispatchDependency,
-	isPayloadDispatchDependency,
-	isPayloadProductDependency,
-	isProductDependency,
-} from './guards';
+import { isFPEffect, isPayloadFPEffect } from './guards';
 import { bind, Do } from 'fp-ts/Identity';
 import { Dispatch } from 'react';
-import {
-	dispatchCallStrat,
-	payloadDispatchCallStrat,
-	payloadProductCallStrat,
-	productCallStrat,
-} from './strategies';
-import { map as OMap, fromPredicate } from 'fp-ts/Option';
+import { FPEffectCallStrat, PayloadFPEffectCallStrat } from './strategies';
+import { fromNullable, fold, map as OMap, fromPredicate } from 'fp-ts/Option';
 
-const tagEffect = <A extends Action<any>, D extends HandlerDependencies<A>, T>({
-	dependencies,
+const tagEffect = <A extends Action<any>>({
 	payload,
-}: Pick<Effect<A, D, T>, 'dependencies' | 'payload'>): EffectKinds => {
-	console.log('partial payload is:', payload);
-	const hasPayload = !!payload;
-
-	const hasProductDependencies = typeof dependencies === 'object';
-
-	const res = hasPayload
-		? hasProductDependencies
-			? 'payloadProductDependency'
-			: 'payloadDispatchDependency'
-		: hasProductDependencies
-		? 'productDependency'
-		: 'dispatchDependency';
-	console.log('tagging with:', res);
-
-	return res;
-};
+}: Pick<Effect<A>, 'dependencies' | 'payload'>): EffectKinds =>
+	pipe(
+		payload,
+		fromNullable,
+		fold(
+			() => 'FPReader',
+			() => 'payloadFPReader'
+		)
+	);
 
 export const toPartialEffect =
-	<A extends Action<any>, D extends HandlerDependencies<A>, T>(
-		handler: HandlerKinds<A, D, T>
-	) =>
+	<A extends Action<any>>(handler: Handler<A>) =>
 	(type: A['type']) =>
-	(createDeps: DependencyCreator<A> | undefined): PreEffect<A, D, T> =>
+	(createDeps?: DependencyCreator<A>) =>
 		pipe(
 			Do,
 			bind('type', () => type),
@@ -60,15 +39,13 @@ export const toPartialEffect =
 		);
 
 export const toMiddleware =
-	<A extends Action<any>, D extends HandlerDependencies<A>, T>(
-		promiseTracker: (a: unknown) => void
-	) =>
+	<A extends Action<any>>(promiseTracker: (a: unknown) => void) =>
 	(
 		makeObservableDispatch: (
 			matched: A['type']
 		) => (dispatch: Dispatch<A>) => Dispatch<A>
 	) =>
-	(pe: PreEffect<A, D, T>) =>
+	(pe: PreEffect<A>) =>
 	(dispatch: Dispatch<A>) =>
 	(next: Dispatch<A>) =>
 	(action: A) =>
@@ -83,9 +60,23 @@ export const toMiddleware =
 							action.type
 						)(dispatch);
 
-						return isDependencyCreator(createDependencies)
-							? createDependencies(observableDispatch)
-							: observableDispatch;
+						console.log(' disp is:', typeof dispatch);
+
+						console.log(
+							'observable disp is:',
+							typeof observableDispatch
+						);
+
+						// wrangle dispatch function into an object if no
+						// createDependencies function was passed in
+						return pipe(
+							createDependencies,
+							fromNullable,
+							fold(
+								() => ({ dispatch: observableDispatch }),
+								(c) => c(observableDispatch)
+							)
+						);
 					}),
 					bind('payload', () => action.payload),
 					bind('_effectTag', tagEffect),
@@ -96,19 +87,18 @@ export const toMiddleware =
 		);
 
 export const runEffect =
-	<A extends Action<any>, D extends HandlerDependencies<A>, T>(
-		promiseTracker: (a: unknown) => void
-	) =>
-	(effect: Effect<A, D, T>) =>
+	<A extends Action<any>>(promiseTracker: (a: unknown) => void) =>
+	(effect: Effect<A>) =>
 		pipe(
-			isDispatchDependency(effect)
-				? pipe(effect, dispatchCallStrat)
-				: isPayloadDispatchDependency(effect)
-				? pipe(effect, payloadDispatchCallStrat)
-				: isProductDependency(effect)
-				? pipe(effect, productCallStrat)
-				: isPayloadProductDependency(effect)
-				? pipe(effect, payloadProductCallStrat)
-				: null,
+			effect,
+			(x) => {
+				console.log('running effect...:', effect);
+				return effect;
+			},
+			isFPEffect,
+			(b) =>
+				b
+					? FPEffectCallStrat(effect as FPEffect<A>)
+					: PayloadFPEffectCallStrat(effect as PayloadFPEffect<A>),
 			promiseTracker
 		);

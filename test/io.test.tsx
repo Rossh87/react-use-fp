@@ -4,16 +4,13 @@ import ReaderTestComponent from './ReaderTestComponent';
 import { Reader } from 'fp-ts/lib/Reader';
 import { IO } from 'fp-ts/lib/IO';
 import { CountAction } from './testReducer';
-import {
-	DependencyCreator,
-	PayloadDispatchDependencyReader,
-	PayloadProductDependencyReader,
-} from '../src/types';
+import { DependencyCreator, FPReader, PayloadFPReader } from '../src/types';
 
 describe('handlers that return an IO type', () => {
 	it('correctly sets state via reducer', () => {
-		const handler: Reader<Dispatch<CountAction>, IO<void>> =
-			(dispatch) => () =>
+		const handler: FPReader<CountAction> =
+			({ dispatch }) =>
+			() =>
 				dispatch({ type: 'SET_COUNT', payload: 42 });
 
 		render(<ReaderTestComponent handler={handler} />);
@@ -26,7 +23,7 @@ describe('handlers that return an IO type', () => {
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it.only('injects dependencies correctly', () => {
+	it('injects dependencies correctly', () => {
 		const makeDependencies: DependencyCreator<CountAction> = (
 			dispatch
 		) => ({ dispatch, newCount: 42 });
@@ -35,9 +32,6 @@ describe('handlers that return an IO type', () => {
 			(a: { dispatch: Dispatch<CountAction>; newCount: number }) =>
 			() => {
 				{
-					console.log('from payloadproduct');
-					console.log('dispatch is:', a.dispatch);
-					console.log('typeof disp is:', typeof a.dispatch);
 					a.dispatch({ type: 'SET_COUNT', payload: a.newCount });
 				}
 			};
@@ -57,18 +51,15 @@ describe('handlers that return an IO type', () => {
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it.only('correctly uses payload from initiating action for DispatchReader', () => {
+	it('correctly uses payload from initiating action for DispatchReader', () => {
 		const payload: number = 42;
 
-		const payloadHandler: PayloadDispatchDependencyReader<
-			CountAction,
-			number
-		> = (payload) => (dispatch) => () => {
-			console.log('from payloadDispatch');
-			console.log('dispatch is:', dispatch);
-			console.log('typeof disp is:', typeof dispatch);
-			dispatch({ type: 'SET_COUNT', payload });
-		};
+		const payloadHandler: PayloadFPReader<CountAction, number> =
+			(payload) =>
+			({ dispatch }) =>
+			() => {
+				dispatch({ type: 'SET_COUNT', payload });
+			};
 
 		render(<ReaderTestComponent handler={payloadHandler} payload={42} />);
 
@@ -80,7 +71,7 @@ describe('handlers that return an IO type', () => {
 		expect(count.innerHTML).toEqual('42');
 	});
 
-	it('correctly uses payload from initiating action for DependencyReader', () => {
+	it.only('correctly uses payload from initiating action for DependencyReader', () => {
 		interface PayloadTestDependencies {
 			dispatch: Dispatch<CountAction>;
 			toAdd: number;
@@ -90,9 +81,10 @@ describe('handlers that return an IO type', () => {
 			dispatch
 		) => ({ dispatch, toAdd: 2 });
 
-		const payloadHandler: PayloadProductDependencyReader<
-			PayloadTestDependencies,
-			number
+		const payloadHandler: PayloadFPReader<
+			CountAction,
+			number,
+			PayloadTestDependencies
 		> =
 			(payload) =>
 			({ dispatch, toAdd }) =>

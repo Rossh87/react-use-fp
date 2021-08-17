@@ -1,11 +1,4 @@
-import {
-	DependencyCreator,
-	DispatchDependencyEffect,
-	Effect,
-	PayloadDispatchDependencyEffect,
-	PayloadProductDependencyEffect,
-	ProductDependencyEffect,
-} from './types';
+import { DependencyCreator, Effect, FPEffect, PayloadFPEffect } from './types';
 
 export function isPromise(a: unknown): a is Promise<any> {
 	return a instanceof Promise;
@@ -17,26 +10,10 @@ export function isDependencyCreator<A>(
 	return typeof a === 'function';
 }
 
-export function isDispatchDependency(
-	a: Effect<any, any, any>
-): a is DispatchDependencyEffect<any, any, any> {
-	return a._effectTag === 'dispatchDependency';
+export function isFPEffect(a: Effect<any>): a is FPEffect<any> {
+	return a._effectTag === 'FPReader';
 }
 
-export function isProductDependency(
-	a: Effect<any, any, any>
-): a is ProductDependencyEffect<any, any, any> {
-	return a._effectTag === 'productDependency';
-}
-
-export function isPayloadProductDependency(
-	a: Effect<any, any, any>
-): a is PayloadProductDependencyEffect<any, any, any> {
-	return a._effectTag === 'payloadProductDependency';
-}
-
-export function isPayloadDispatchDependency(
-	a: Effect<any, any, any>
-): a is PayloadDispatchDependencyEffect<any, any, any> {
-	return a._effectTag === 'payloadDispatchDependency';
+export function isPayloadFPEffect(a: Effect<any>): a is PayloadFPEffect<any> {
+	return a._effectTag === 'payloadFPReader';
 }

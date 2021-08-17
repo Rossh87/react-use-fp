@@ -11,122 +11,66 @@ export interface Action<T> {
 // init stuff
 type GetDependencyType<A, D> = D extends (...args: any[]) => infer R
 	? R
-	: Dispatch<A>;
+	: DispatchDependency<A>;
 
 // We need a union with Record type to satisfy fp-ts
-export type ActionMap<
-	S,
-	A extends { type: string; payload?: any },
-	D extends DependencyCreator<A> = DependencyCreator<A>
-> = {
-	[key in ReducerAction<Reducer<S, A>>['type']]?: HandlerKinds<
-		A,
-		GetDependencyType<A, D>,
-		A['payload']
-	>;
+export type ActionMap<S, A extends { type: string; payload?: any }> = {
+	[key in ReducerAction<Reducer<S, A>>['type']]?: Handler<A, A['payload']>;
 } &
 	Record<string, any>;
 
 // // dependency stuff
-export type DependencyType = 'dispatch' | 'product';
-
 interface DispatchDependency<A> {
 	dispatch: Dispatch<A>;
 }
 
-export interface ProductDependencies<A> extends DispatchDependency<A> {}
+export interface ReaderDependencies<A> extends DispatchDependency<A> {}
 
-export interface DependencyCreator<A> {
-	(dispatch: Dispatch<A>): ProductDependencies<A>;
+export interface DependencyCreator<A, D = {}> {
+	(dispatch: Dispatch<A>): ReaderDependencies<A> & D;
 }
-
-export type HandlerDependencies<A> = Dispatch<A> | ProductDependencies<A>;
 
 // handler stuff
 export type ReaderResult = Task<any> | IO<any>;
 
-export type DispatchDependencyReader<A> = Reader<Dispatch<A>, ReaderResult>;
+export type FPReader<A, D = {}> = Reader<
+	ReaderDependencies<A> & D,
+	ReaderResult
+>;
 
-export type PayloadDispatchDependencyReader<A, T> = (
-	t: T
-) => Reader<Dispatch<A>, ReaderResult>;
+export type PayloadFPReader<A, T, D = {}> = (payload: T) => FPReader<A, D>;
 
-export type ProductDependencyReader<D> = Reader<D, ReaderResult>;
-
-export type PayloadProductDependencyReader<D, T> = (
-	t: T
-) => Reader<D, ReaderResult>;
-
-export type HandlerKinds<A, D, T> =
-	| DispatchDependencyReader<A>
-	| PayloadDispatchDependencyReader<A, T>
-	| ProductDependencyReader<D>
-	| PayloadProductDependencyReader<D, T>;
+export type Handler<A, T = any> = PayloadFPReader<A, T> | FPReader<A>;
 
 // receiver stuff
-export type EffectKinds =
-	| 'dispatchDependency'
-	| 'productDependency'
-	| 'payloadDispatchDependency'
-	| 'payloadProductDependency';
+export type EffectKinds = 'payloadFPReader' | 'FPReader';
 
-export interface Effect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> {
+export type EffectHandlers<A, T = any> = FPReader<A> | PayloadFPReader<A, T>;
+
+export interface Effect<A extends Action<any>> {
 	_effectTag: EffectKinds;
 	type: A['type'];
-	handler: HandlerKinds<A, D, T>;
-	dependencies: HandlerDependencies<A>;
+	handler: EffectHandlers<A, A['payload']>;
+	dependencies: ReaderDependencies<A>;
 	payload: A['payload'];
-	createDependencies: DependencyCreator<A> | undefined;
+	createDependencies?: DependencyCreator<A>;
 }
 
-export type PreEffect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> = Pick<Effect<A, D, T>, 'type' | 'handler' | 'createDependencies'>;
+export type PreEffect<A extends Action<any>> = Pick<
+	Effect<A>,
+	'type' | 'handler' | 'createDependencies'
+>;
 
-export interface DispatchDependencyEffect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> extends Effect<A, D, T> {
-	_effectTag: 'dispatchDependency';
-	handler: DispatchDependencyReader<A>;
-	dependencies: Dispatch<A>;
+export interface FPEffect<A extends Action<any>> extends Effect<A> {
+	_effectTag: 'FPReader';
+	handler: FPReader<A>;
+	dependencies: ReaderDependencies<A>;
 }
 
-export interface PayloadDispatchDependencyEffect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> extends Effect<A, D, T> {
-	_effectTag: 'payloadDispatchDependency';
-	handler: PayloadDispatchDependencyReader<A, T>;
-	dependencies: Dispatch<A>;
-}
-
-export interface ProductDependencyEffect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> extends Effect<A, D, T> {
-	_effectTag: 'productDependency';
-	handler: ProductDependencyReader<D>;
-	dependencies: D;
-}
-
-export interface PayloadProductDependencyEffect<
-	A extends Action<any>,
-	D extends HandlerDependencies<A>,
-	T
-> extends Effect<A, D, T> {
-	_effectTag: 'payloadProductDependency';
-	handler: PayloadProductDependencyReader<D, T>;
-	dependencies: D;
+export interface PayloadFPEffect<A extends Action<any>> extends Effect<A> {
+	_effectTag: 'payloadFPReader';
+	handler: PayloadFPReader<A, A['payload']>;
+	dependencies: ReaderDependencies<A>;
 }
 
 // observer stuff
@@ -150,13 +94,12 @@ export interface ComposableMiddleware<A extends Action<any>> {
 	(dispatch: Dispatch<A>): (next: Dispatch<A>) => (action: A) => void;
 }
 
-export type FPContextTools<S, A extends Action<any>, T = any> = [
-	S,
-	Dispatch<A>,
-	(
-		a: A['type']
-	) => (
-		b: HandlerKinds<A, HandlerDependencies<A>, T>,
-		c?: DependencyCreator<A>
-	) => void
-];
+// mutable state for handlers
+
+export interface ExecutionState {
+	dispatch: Dispatch<any>;
+	handlers: ComposableMiddleware<any>[];
+	observed: ObservedActions<any>;
+	pendingPromises: PendingTracker;
+	isFirstRun: boolean;
+}

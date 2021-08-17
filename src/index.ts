@@ -5,14 +5,12 @@ import {
 	Action,
 	ComposableMiddleware,
 	DependencyCreator,
-	DependencyType,
-	FPContextTools,
-	HandlerDependencies,
-	HandlerKinds,
 	ObservedActions,
 	PendingTracker,
 	ActionMap,
 	Observer,
+	FPReader,
+	PayloadFPReader,
 } from './types';
 import {
 	makePendingPromiseTracker,
@@ -25,7 +23,7 @@ import { keys } from 'fp-ts/Record';
 import { map as ArrMap } from 'fp-ts/Array';
 
 // mutable state for handlers
-const handlers = [];
+const handlers: ComposableMiddleware<any>[] = [];
 const observed: ObservedActions<any> = {};
 const pendingPromises: PendingTracker = { pending: 0 };
 let isFirstRun = true;
@@ -35,13 +33,13 @@ export const useFPReducer =
 	<
 		S,
 		A extends { type: string; payload?: any },
-		D extends DependencyCreator<A> = DependencyCreator<A>
+		D extends DependencyCreator<A>
 	>(
 		initial: S,
 		reducer: Reducer<S, A>,
 		acceptObserver?: AcceptObserver<A>
 	) =>
-	(actionMap: ActionMap<S, A, D>, createDependencies?: D) => {
+	(actionMap: ActionMap<S, A>, createDependencies?: D) => {
 		const [state, baseDispatch] = useReducer(reducer, initial);
 
 		// mutable state for tracking execution
@@ -61,18 +59,15 @@ export const useFPReducer =
 			handlers.push(mw);
 
 		const withDispatch =
-			<D extends HandlerDependencies<A>, T = undefined>(
-				type: A['type']
-			) =>
+			(type: A['type']) =>
 			(
-				handler: HandlerKinds<A, D, T>,
+				handler: typeof actionMap['type'],
 				createDependencies?: DependencyCreator<A>
 			) =>
 				pipe(
-					toPartialEffect<A, D, T>(handler)(type)(createDependencies),
-					toMiddleware<A, D, T>(promiseResolutionTracker)(odm),
-					addMiddleware,
-					() => {}
+					toPartialEffect<A>(handler)(type)(createDependencies),
+					toMiddleware<A>(promiseResolutionTracker)(odm),
+					addMiddleware
 				);
 
 		// setup the middlewares here
@@ -80,20 +75,18 @@ export const useFPReducer =
 			pipe(
 				keys(actionMap),
 				ArrMap((key) => {
-					withDispatch<HandlerDependencies<A>, A['payload']>(key)(
-						actionMap[key],
-						createDependencies
-					);
+					withDispatch(key)(actionMap[key], createDependencies);
 				})
 			);
 
-			dispatch = handlers.reduceRight(
-				(next, fn) => fn(baseDispatch)(next),
-				baseDispatch
-			);
+			dispatch = (a: A) =>
+				handlers.reduceRight(
+					(next, fn) => fn(baseDispatch)(next),
+					baseDispatch
+				)(a);
 
 			isFirstRun = false;
 		}
 
-		return [state, dispatch] as [S, Dispatch<A>];
+		return [state, dispatch] as const;
 	};
