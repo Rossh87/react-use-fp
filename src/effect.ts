@@ -80,7 +80,6 @@ export const runEffect =
 		pipe(
 			effect,
 			(x) => {
-				console.log('running effect...:', effect);
 				return effect;
 			},
 			isFPEffect,

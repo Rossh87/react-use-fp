@@ -66,10 +66,6 @@ export const useFPReducer =
 		// handler for action types we haven't seen before
 		pipe(
 			Object.keys(actionMap),
-			(x) => {
-				console.log('keys are:', x);
-				return x;
-			},
 			filterAndSetActionTypes(usedActions),
 			ArrMap((key) => {
 				withDispatch(key)(actionMap[key], createDependencies);

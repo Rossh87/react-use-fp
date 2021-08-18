@@ -1,17 +1,8 @@
 import React, { Dispatch } from 'react';
-import {
-	render,
-	screen,
-	fireEvent,
-	waitFor,
-} from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ReaderTestComponent from './ReaderTestComponent';
 import { CountAction } from './testReducer';
-import {
-	DependencyCreator,
-	FPReader,
-	PayloadFPReader,
-} from '../src/types';
+import { DependencyCreator, FPReader, PayloadFPReader } from '../src/types';
 import { resetInternals } from '../src';
 
 beforeEach(() => resetInternals());
@@ -26,7 +17,6 @@ describe('handlers that return a Task type', () => {
 						res();
 					}, 100);
 				}).then(() => {
-					console.log('dispatching...');
 					dispatch({ type: 'SET_COUNT', payload: 42 });
 				});
 

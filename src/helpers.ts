@@ -14,16 +14,8 @@ export const makePendingPromiseTracker =
 			fromPredicate(isPromise),
 			map((p) => {
 				tracker.pending += 1;
-				console.log(
-					'incremented promise tracker, now equals',
-					tracker.pending
-				);
 				p.then(() => {
 					tracker.pending = tracker.pending - 1;
-					console.log(
-						'decrementing promise tracker, now equals:',
-						tracker.pending
-					);
 				});
 			})
 		);
@@ -67,7 +59,6 @@ export const makeObserver =
 		let retries = 0;
 
 		while (tracker.pending > 0) {
-			console.log('retrying with pending set to: ', tracker.pending);
 			if (retries < 25) {
 				await delay(200);
 				retries++;
@@ -76,15 +67,12 @@ export const makeObserver =
 				throw new Error(failedToResolveMessage);
 			}
 		}
-		console.log('no more pending, returning observed value:', state);
 		return Object.assign({}, state);
 	};
 
 export const setObserved =
 	<A extends Action<any>>(record: ObservedActions<A>) =>
 	(matched: string) => {
-		console.log(`matched ${matched}`);
-		console.log('record state is', record);
 		return pipe(
 			record,
 			lookup(matched),
