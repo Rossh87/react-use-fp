@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Examples
-permalink: /examples
+title: Testing
+permalink: /examples/testing
 ---
 # Usage
 
@@ -49,4 +49,4 @@ export const componentReducer: Reducer<ComponentState, SetCountAction> = (
 ```
 -	[Passing dependencies (beyond dispatch) to a handler]({% link /examples/dependency-injection %})
 -	[Using optional subscriber argument with useFPReducer]({% link /examples/subscriber %})
--	[Different]({% link /examples/testing %})
+-	[Testing]({% link /examples/testing %})

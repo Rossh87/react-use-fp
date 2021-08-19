@@ -1,5 +1,7 @@
 ---
-layout: home
+layout: default
+title: About
+permalink: /about
 ---
 # About react-use-fp
 
