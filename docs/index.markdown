@@ -1,6 +1,9 @@
+---
+layout: home
+---
 # Getting started
 
-1. Add package to your React project
+Add package to your React project
 
 ```
 npm install react-use-fp
@@ -10,7 +13,8 @@ or, if you're using Yarn,
 yarn add react-use-fp
 ```
 
-2. Create whatever actions/reducers are needed to manage your component's state.
+Create whatever actions/reducers are needed to manage your component's state.
+
 ```
 import { Reducer } from 'react';
 

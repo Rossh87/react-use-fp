@@ -1,3 +1,6 @@
+---
+layout: home
+---
 # About react-use-fp
 
 ## Motivation

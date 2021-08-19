@@ -1,3 +1,6 @@
+---
+layout: home
+---
 # Examples
 
 Unless otherwise indicated, all the examples use the same reducer and actions, specified here:

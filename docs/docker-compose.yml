@@ -1,0 +1,11 @@
+version: '2.4'
+
+services:
+  jekyll:
+    image: bretfisher/jekyll-serve
+    volumes:
+      - .:/site
+    ports:
+      - '8080:4000'
+    environment:
+      - JEKYLL_ENV=virtual
