@@ -34,11 +34,11 @@ export const useFPReducer =
 		A extends { type: string; payload?: any },
 		D extends DependencyCreator<A>
 	>(
-		initial: S,
-		reducer: Reducer<S, A>,
+		actionMap: ActionMap<S, A>,
+		createDependencies?: D,
 		subscriber?: (a: A) => void
 	) =>
-	(actionMap: ActionMap<S, A>, createDependencies?: D) => {
+	(initial: S, reducer: Reducer<S, A>) => {
 		const [state, baseDispatch] = useReducer(reducer, initial);
 
 		// mutable state for tracking execution
