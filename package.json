@@ -58,5 +58,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Rossh87/react-use-fp"
-  }
+  },
+  "homepage": "https://rossh87.github.io/react-use-fp/"
 }
