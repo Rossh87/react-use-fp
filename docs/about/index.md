@@ -6,18 +6,18 @@ permalink: /about
 # About react-use-fp
 
 ## Motivation
-Moderate-to-complex React applications may benefit from the enhanced type-safety of functional libraries like [fp-ts](https://github.com/gcanti/fp-ts), but, while React is reasonably declarative, it mixes a bit awkwardly with some "hardcore" functional concepts.  Consider:
+Moderate-to-complex React applications may benefit from the enhanced type-safety of functional libraries like [fp-ts](https://github.com/gcanti/fp-ts), but, while React is reasonably declarative, it mixes a bit awkwardly with some functional concepts.  Consider:
 ```
 const addToLocalStorage =
 	(storedValue: string): IO<void> =>
 	() =>
 		localStorage.setItem('valueToStore', storedValue);
 
-const StorageComponent: React.FunctionComponent<{ toStore: string }> = ({
-	toStore,
+const StorageComponent: React.FunctionComponent<{ valueToBeStored: string }> = ({
+	valueToBeStored,
 }) => {
 	// we manually invoke addToLocalStorage TWICE to run the IO
-	const storeOnClick = () => addToLocalStorage(toStore)();
+	const storeOnClick = () => addToLocalStorage(valueToBeStored)();
 
 	return <MyCustomButton onClick={storeOnClick} />;
 };
@@ -25,13 +25,15 @@ const StorageComponent: React.FunctionComponent<{ toStore: string }> = ({
 This is not inherently bad; the astute reader will have noticed that we can
 simplify the above by writing the click handler like this:
 ```
-const storeOnClick = addToLocalStorage(toStore);
+const storeOnClick = addToLocalStorage(valueToBeStored);
 ```
 
 However, for more complicated cases, it would be nice to have some inversion of control.  Hence this package.  `react-use-fp` has three main goals:
 1. Help keep `React` coding paradigms out of our `fp-ts` code, and vice-versa, in the interest of readability;
 2. Support code correctness by lightly restricting the shape our business logic can take; and
-3. Introduce new folks to FP patterns (e.g. pipelines, the `Reader` monad) in a way that will immediately be familar to users of `React`/`Redux`. 
+3. Help folks exploring functional programming integrate some core FP concepts with React, in a way that feels intuitive.
+
+---
 
 ## Usage
 `react-use-fp` is heavily inspired by [Redux](https://redux.js.org/) middleware.  Components interact with the outside world exclusively by dispatching actions.  All side effects, computations, and control flow are handled by pure function pipelines composed of [fp-ts](https://github.com/gcanti/fp-ts) constructs.  From here on, we'll refer to these pipelines as **action handlers**.  Action handlers *also* interact with the state exclusively by dispatching actions, and are themselves triggered by dispatched actions.
@@ -47,8 +49,10 @@ interface Action<T> {
 Additional properties shouldn't break anything, but also shouldn't be necessary, and are discouraged.
 
 ### Action handlers
-Similar to Redux action creators, action handlers are pure functions that accept a dispatch function as a parameter and return a function representing the desired computation (`IO` or `Task`) that `react-use-fp` will correctly call at the appropriate time.  So, a basic action handler is of type `Reader<{dispatch: Dispatch<MyActions>}, IO<any> | Task<any>>`.  Here's an example of a basic action handler:
+Similar to Redux action creators, action handlers are pure functions that accept a dispatch function as a parameter and return a function representing the desired computation (`IO` or `Task`) that `react-use-fp` will correctly call at the appropriate time.  So, a basic action handler is of type `Reader<{dispatch: Dispatch<MyActions>}, IO<void> | Task<void>>`.  Here's an example of a basic action handler:
 ```
+import {map, tryCatch} from 'fp-ts/TaskEither'
+
 // Notice dispatch is destructured
 const fetchDataForState = ({dispatch}) =>
 	pipe(
@@ -65,7 +69,7 @@ const fetchDataForState = ({dispatch}) =>
 
 Often, though, we want to pass some initial data for our action handler to operate on.  In this case, the action handler's type would be
 ```
-(t: PayloadType) => Reader<{dispatch: Dispatch<MyActions>}, IO<any> | Task<any>>
+(t: PayloadType) => Reader<{dispatch: Dispatch<MyActions>}, IO<void> | Task<void>>
 ```
 Here's what the basic action handler above might look like if we updated it to accept a payload to operate on:
 ```
@@ -146,4 +150,4 @@ const CountDisplay: React.FunctionComponent<{newCount: number}> = ({newCount}) =
 ```
 As long as a payload is dispatched, the hook will correctly invoke the action handler at the appropriate time.
 
-For examples of `useFPReducer` with handlers that depend on more than just dispatch, check out [the examples section](https://rossh87.github.io/react-use-fp/examples).
+For examples of `useFPReducer` with handlers that depend on more than just dispatch, check out [the examples section]({% link examples/adding-dependencies.md %}).
