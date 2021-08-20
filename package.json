@@ -40,7 +40,7 @@
   "scripts": {
     "test": "jest",
     "prepack": "tsc",
-	"serve-docs": "docker-compose -f docs/docker-compose.yml -p useFP-docs --project-directory $(pwd)/docs up -d"
+	"serve-docs": "docker-compose -f docs/docker-compose.yml -p useFP-docs --project-directory $(pwd)/docs up"
   },
   "types": "dist/index.d.ts",
   "peerDependencies": {
