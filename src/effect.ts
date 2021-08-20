@@ -28,9 +28,9 @@ const tagEffect = <A extends Action<any>>({
 	);
 
 export const toPartialEffect =
-	<A extends Action<any>>(handler: Handler<A>) =>
+	<A extends Action<any>>(handler: Handler<A, any, any>) =>
 	(type: A['type']) =>
-	(createDeps?: DependencyCreator<A>) =>
+	(createDeps?: DependencyCreator<A, any>) =>
 		pipe(
 			Do,
 			bind('type', () => type),

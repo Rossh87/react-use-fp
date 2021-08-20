@@ -1,12 +1,18 @@
-import { DependencyCreator, Effect, FPEffect, PayloadFPEffect } from './types';
+import {
+	DependencyCreator,
+	Effect,
+	FPEffect,
+	PayloadFPEffect,
+	Action,
+} from './types';
 
 export function isPromise(a: unknown): a is Promise<any> {
 	return a instanceof Promise;
 }
 
-export function isDependencyCreator<A>(
-	a: DependencyCreator<A> | undefined
-): a is DependencyCreator<A> {
+export function isDependencyCreator<A extends Action<any>, D>(
+	a: DependencyCreator<A, D> | undefined
+): a is DependencyCreator<A, D> {
 	return typeof a === 'function';
 }
 

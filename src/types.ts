@@ -13,47 +13,44 @@ type GetDependencyType<A, D> = D extends (...args: any[]) => infer R
 	? R
 	: DispatchDependency<A>;
 
-// We need a union with Record type to satisfy fp-ts
-export type ActionMap<S, A extends { type: string; payload?: any }> = {
-	[key in ReducerAction<Reducer<S, A>>['type']]?: Handler<A, A['payload']>;
-} &
-	Record<string, any>;
+export interface ActionMap extends Record<string, any> {}
 
 // // dependency stuff
-interface DispatchDependency<A> {
+export interface DispatchDependency<A> {
 	dispatch: Dispatch<A>;
 }
 
-export interface ReaderDependencies<A> extends DispatchDependency<A> {}
+export type ReaderDependencies<A, D> = DispatchDependency<A> & D;
 
-export interface DependencyCreator<D> {
-	(dispatch: Dispatch<any>): DispatchDependency<any> & D;
+export interface DependencyCreator<A extends Action<any>, D> {
+	(dispatch: Dispatch<A>): DispatchDependency<A> &
+		{ [key in keyof D]: D[key] };
 }
 
 // handler stuff
 export type ReaderResult = Task<any> | IO<any>;
 
 export type FPReader<A, D = {}> = Reader<
-	ReaderDependencies<A> & D,
+	ReaderDependencies<A, D>,
 	ReaderResult
 >;
 
 export type PayloadFPReader<A, T, D = {}> = (payload: T) => FPReader<A, D>;
 
-export type Handler<A, T = any> = PayloadFPReader<A, T> | FPReader<A>;
+export type Handler<A, T, D> = PayloadFPReader<A, T, D> | FPReader<A, D>;
 
 // receiver stuff
 export type EffectKinds = 'payloadFPReader' | 'FPReader';
 
-export type EffectHandlers<A, T = any> = FPReader<A> | PayloadFPReader<A, T>;
+export type EffectHandlers<A, T, D> = FPReader<A, D> | PayloadFPReader<A, T, D>;
 
-export interface Effect<A extends Action<any>> {
+export interface Effect<A extends Action<any>, T = any, D = {}> {
 	_effectTag: EffectKinds;
 	type: A['type'];
-	handler: EffectHandlers<A, A['payload']>;
-	dependencies: ReaderDependencies<A>;
+	handler: EffectHandlers<A, T, D>;
+	dependencies: ReaderDependencies<A, D>;
 	payload: A['payload'];
-	createDependencies?: DependencyCreator<A>;
+	createDependencies?: DependencyCreator<A, D>;
 }
 
 export type PreEffect<A extends Action<any>> = Pick<
@@ -61,16 +58,18 @@ export type PreEffect<A extends Action<any>> = Pick<
 	'type' | 'handler' | 'createDependencies'
 >;
 
-export interface FPEffect<A extends Action<any>> extends Effect<A> {
+export interface FPEffect<A extends Action<any>, T = any, D = {}>
+	extends Effect<A, T, D> {
 	_effectTag: 'FPReader';
-	handler: FPReader<A>;
-	dependencies: ReaderDependencies<A>;
+	handler: FPReader<A, D>;
+	dependencies: ReaderDependencies<A, D>;
 }
 
-export interface PayloadFPEffect<A extends Action<any>> extends Effect<A> {
+export interface PayloadFPEffect<A extends Action<any>, T = any, D = {}>
+	extends Effect<A, T, D> {
 	_effectTag: 'payloadFPReader';
-	handler: PayloadFPReader<A, A['payload']>;
-	dependencies: ReaderDependencies<A>;
+	handler: PayloadFPReader<A, T, D>;
+	dependencies: ReaderDependencies<A, D>;
 }
 
 // observer stuff
@@ -95,7 +94,6 @@ export interface ComposableMiddleware<A extends Action<any>> {
 }
 
 // mutable state for handlers
-
 export interface ExecutionState {
 	dispatch: Dispatch<any>;
 	handlers: ComposableMiddleware<any>[];
@@ -103,3 +101,15 @@ export interface ExecutionState {
 	pendingPromises: PendingTracker;
 	isFirstRun: boolean;
 }
+
+// utility types
+type ExtractPayloadType<T> = T extends PayloadFPReader<any, infer P, any>
+	? P
+	: undefined;
+
+type ActionCreators<T> = {
+	[K in keyof T]: (p: ExtractPayloadType<T[K]>) => {
+		type: K;
+		payload: ExtractPayloadType<T[K]>;
+	};
+};

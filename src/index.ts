@@ -1,11 +1,11 @@
-import { useReducer, Reducer } from 'react';
+import { useReducer, Reducer, Dispatch } from 'react';
 import { pipe } from 'fp-ts/lib/function';
 import {
 	ComposableMiddleware,
 	DependencyCreator,
 	ObservedActions,
 	PendingTracker,
-	ActionMap,
+	ReaderDependencies,
 } from './types';
 import {
 	makePendingPromiseTracker,
@@ -14,6 +14,7 @@ import {
 } from './helpers';
 import { toMiddleware, toPartialEffect } from './effect';
 import { map as ArrMap } from 'fp-ts/Array';
+import { PayloadFPReader, Handler } from './types';
 
 // mutable state for handlers
 let handlers: ComposableMiddleware<any>[] = [];
@@ -32,16 +33,17 @@ export const useFPReducer =
 	<
 		S,
 		A extends { type: string; payload?: any },
-		D extends DependencyCreator<A>
+		D extends ReaderDependencies<A, Record<string, any>>,
+		R extends Record<string, any>
 	>(
-		actionMap: ActionMap<S, A>,
-		createDependencies?: D,
+		actionMap: R,
+		createDependencies?: DependencyCreator<A, D>,
 		subscriber?: (a: A) => void
 	) =>
 	(initial: S, reducer: Reducer<S, A>) => {
 		const [state, baseDispatch] = useReducer(reducer, initial);
 
-		// mutable state for tracking execution
+		// build trackers
 		const promiseResolutionTracker =
 			makePendingPromiseTracker(pendingPromises);
 		const subbableDispatch = makeSubscribableDispatch(subscriber);
@@ -51,10 +53,10 @@ export const useFPReducer =
 			handlers.push(mw);
 
 		const withDispatch =
-			(type: A['type']) =>
+			(type: string) =>
 			(
-				handler: typeof actionMap['type'],
-				createDependencies?: DependencyCreator<A>
+				handler: Handler<A, any, D>,
+				createDependencies?: DependencyCreator<A, D>
 			) =>
 				pipe(
 					toPartialEffect<A>(handler)(type)(createDependencies),
@@ -62,8 +64,9 @@ export const useFPReducer =
 					addMiddleware
 				);
 
-		// setup the middlewares here.  Only add a middleware
-		// handler for action types we haven't seen before
+		/**This only adds a new middleware if the actionMap has keys
+		 * we haven't seen before
+		 */
 		pipe(
 			Object.keys(actionMap),
 			filterAndSetActionTypes(usedActions),
@@ -72,11 +75,18 @@ export const useFPReducer =
 			})
 		);
 
+		/**
+		 It would be more efficient to store these pre-composed, and then compose
+		 the PRE-COMPOSED with a new composition whenever we add new middlewares.
+		 */
 		let dispatch = (a: A) =>
 			handlers.reduceRight(
 				(next, fn) => fn(baseDispatch)(next),
 				baseDispatch
 			)(a);
 
-		return [state, dispatch] as const;
+		return [
+			state,
+			dispatch as Dispatch<A | { type: keyof R; payload: any }>,
+		] as const;
 	};
