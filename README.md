@@ -1,8 +1,5 @@
 # react-use-fp
 
-## Advisory
-
-
 ## Motivation
 Functional programmers designing client-side applications that require moderate to complex data manipulation may find it helpful to use [fp-ts](https://github.com/gcanti/fp-ts) in React applications. Because React is a [fundamentally imperative framework](https://github.com/gcanti/fp-ts/issues/900), we may sometimes be forced to explicitly execute our pure function pipelines.  Consider:
 ```
