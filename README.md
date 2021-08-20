@@ -1,223 +1,105 @@
-# react-use-fp
+# Getting started
 
-## Motivation
-Functional programmers designing client-side applications that require moderate to complex data manipulation may find it helpful to use [fp-ts](https://github.com/gcanti/fp-ts) in React applications. Because React is a [fundamentally imperative framework](https://github.com/gcanti/fp-ts/issues/900), we may sometimes be forced to explicitly execute our pure function pipelines.  Consider:
-```
-const addToLocalStorage =
-	(storedValue: string): IO<void> =>
-	() =>
-		localStorage.setItem('valueToStore', storedValue);
+## Installation
+Add package to your React project
 
-const StorageComponent: React.FunctionComponent<{ toStore: string }> = ({
-	toStore,
-}) => {
-	// we manually invoke addToLocalStorage TWICE to run the IO
-	const storeOnClick = () => addToLocalStorage(toStore)();
+```
+npm install react-use-fp
+```
+or, if you're using Yarn,
+```
+yarn add react-use-fp
+```
+---
 
-	return <MyCustomButton onClick={storeOnClick} />;
-};
-```
-This is not inherently bad, and is probably the best approach for simple cases; the astute reader will have noticed that we can
-simplify the above by writing the click handler like this:
-```
-const storeOnClick = addToLocalStorage(toStore);
-```
+## Setup your state
+Define a reducer, and type its actions
 
-However, for component trees that manage their state via `useReducer`, a more consistent and explicit approach may be helfpul.  `react-use-fp` is a hook that offers one such approach.  It has two goals:
-1. Present a simple API that will immediately be familiar to React users
-2. Enforce clear boundaries between UI code, business logic, and component state
-
-## Usage
-`react-use-fp` is heavily inspired by [Redux](https://redux.js.org/) middleware.  Components interact with the outside world exclusively by dispatching actions.  All side effects, computations, and control flow are handled by pure function pipelines composed of [fp-ts](https://github.com/gcanti/fp-ts) constructs.  From here on, we'll refer to these pipelines as **action handlers**.  Action handlers *also* interact with the state exclusively by dispatching actions, and are themselves triggered by dispatched actions.
-
-### Actions
-Actions are plain JS object actions, exactly like `useReducer`/`Redux`.  However, they **must** satisfy the following interface to work correctly with `react-use-fp`:
 ```
-interface Action<T> {
-	type: string;
-	payload?: T;
-}
-```
-Additional properties shouldn't break anything, but also shouldn't be necessary, and are discouraged.
-
-### Action handlers
-Similar to Redux action creators, action handlers are pure functions that accept a dispatch function as a parameter and return a function representing the desired computation (`IO` or `Task`) that `react-use-fp` will correctly call at the appropriate time.  So, a basic action handler is of type `Reader<Dispatch<MyActions>, IO<any> | Task<any>>`.  Here's an example of a basic action handler:
-```
-//basic action handler
-const fetchDataForState = (dispatch) =>
-	pipe(
-		tryCatch(
-			() => fetch('www.someApi.com'),
-			(e) => `fetch failed for following reason: ${e}`
-		),
-		map((data) => dispatch({ type: 'FETCH_SUCCESS', payload: data })),
-		mapLeft((errInfo) =>
-			dispatch({ type: 'FETCH_FAILED', payload: errInfo })
-		)
-	);
-```
-
-Often, though, we want to pass some initial data for our action handler to operate on.  In this case, the action handler's type would be
-```
-type PayloadDispatchHandler<T> = (payload: T) => Reader<Dispatch<MyActions>, IO<any> | Task<any>>
-```
-Here's what the basic action handler above might look like if we updated it to accept a payload to operate on:
-```
-//payload action handler
-const fetchDataForState = (apiAddress: string) => (dispatch) =>
-	pipe(
-		tryCatch(
-			() => fetch(apiAddress),
-			(e) => `fetch failed for following reason: ${e}`
-		),
-		map((data) => dispatch({ type: 'FETCH_SUCCESS', payload: data })),
-		mapLeft((errInfo) =>
-			dispatch({ type: 'FETCH_FAILED', payload: errInfo })
-		)
-	);
-```
-
-### useFPMiddleware
-Identical to `useReducer`, except that it returns a tuple of three elements instead of two.  The first two are, once again, identical to `state` and `dispatch` returned by `useReducer`. The third (we'll call it `withDispatch`) is a curried function that normally accepts two arguments, and is used to associate an action handler with the action type that will initiate it. So, a simple component that uses `use-react-fp` looks like this:
-```
-// types & actions
-interface InitCountAction {
-	type: 'INIT_COUNT';
-}
+import { Reducer } from 'react';
 
 interface SetCountAction {
 	type: 'SET_COUNT';
 	payload: number;
 }
 
-interface CountState {
-	count: number;
+interface ErrorAction {
+	type: 'COUNT_COMPONENT_ERR'
+	payload: Error
 }
 
-type CountAction = InitCountAction | SetCountAction;
+interface ComponentState {
+	count: number;
+	error: null | Error
+}
 
-// reducer
-const countReducer: Reducer<CountState, CountAction> = (state, action) => {
+export type CountActions = ErrorAction | SetCountAction
+
+const initialState: ComponentState = {
+	count: 0,
+	error: null
+};
+
+export const componentReducer: Reducer<ComponentState, SetCountAction> = (
+	state,
+	action
+) => {
 	switch (action.type) {
 		case 'SET_COUNT':
 			return { count: action.payload };
+		case 'COUNT_COMPONENT_ERR':
+			return {...state, error: action.payload}
 		default:
-			return { ...state };
+			return state;
 	}
 };
-
-// action handler
-const countHandler =
-	(dispatch: Dispatch<CountAction>): IO<void> =>
-	() =>
-		dispatch({ type: 'SET_COUNT', payload: 42 });
-
-// component
-const CountComponent: FunctionComponent = (props) => {
-	const [state, dispatch, withDispatch] = useFPMiddleware(countReducer, {
-		count: 0,
-	});
-
-	//initialize the action handler.  It will run when an action of type 'INIT_COUNT' is dispatched.
-	withDispatch('INIT_COUNT')(countHandler);
-
-	return (
-		<div>
-			<h1>
-				Hello! The count is currently {state.count}, but you can update
-				it by clicking!
-			</h1>
-			<button onClick={() => dispatch({ type: 'INIT_COUNT' })}></button>
-		</div>
-	);
-};
 ```
-Often we would like to control what the new count will be instead of always setting it to 42.  To get there, first update the action handler to accept a `newCount` parameter:
+---
+## Write an action handler
+Define a handler that can interact with component state via  dispatch.  It should be of type
+`Reader<{dispatch: Dispatch}, any>`.  For more details about this pattern, see [the About section]({% link about/index.md %}).
 ```
-const countHandler = (newCount: number) =>
-	(dispatch: Dispatch<CountAction>): IO<void> =>
-	() =>
-		dispatch({ type: 'SET_COUNT', payload: newCount });
-```
+import {FPReader} from 'react-use-fp'
+import {CountActions} from './reducer'
+import {tryCatch, map, mapLeft} from 'fp-ts/TaskEither'
+import {pipe} from 'fp-ts/function'
 
-Next, simply add a payload to the action that initiates the action creator--in this case, `'INIT_COUNT'`.  So our updated component could look like this:
-```
-//CountComponent accepts the new count as a prop
-const CountComponent: FunctionComponent<{newCount: number}> = ({newCount}) => {
-	const [state, dispatch, withDispatch] = useFPMiddleware(countReducer, {
-		count: 0,
-	});
-
-	withDispatch('INIT_COUNT')(countHandler);
-
-	return (
-		<div>
-			<h1>
-				Hello! The count is currently {state.count}, but you can update
-				it by clicking!
-			</h1>
-			// dispatch the new count as a payload when button is clicked
-			<button onClick={() => dispatch({ type: 'INIT_COUNT', payload: newCount })}></button>
-		</div>
-	);
-};
-```
-As long as a payload is dispatched, the hook will correctly invoke the action handler at the appropriate time.
-
-### Advanced Action Handler Dependencies
-Sometimes we might want to inject multiple dependencies into an action handler, not just `dispatch`.  For example, injecting an HTTP library in this way makes it easy to pass in a mock implementation for testing.  `withDispatch` accepts an optional third argument to handle this case.  This argument must be a function that accepts `dispatch` as its only parameter, and returns an object containing all desired dependencies as properties, *including* `dispatch`.  So, if we would like to inject the HTTP request library `axios` into our action handler, it might look like this:
-```
-// dependency interface
-interface Dependencies {
-	dispatch: Dispatch<FetchActions>;
-	http: AxiosInstance;
-}
-
-// action handler
-const fetchDataForState = (dependencies: Dependencies) =>
+// Notice we destructure the first parameter to access dispatch
+const getNewCount: FPReader<CountActions> = ({ dispatch }) =>
 	pipe(
 		tryCatch(
-			() => dependencies.http.get('www.someApi.com'),
-			(e) => `fetch failed for following reason: ${e}`
+			() =>
+				fetch('www.countapi.com').then(
+					(res) => res.json() as Promise<{ count: number }>
+				),
+			(e) =>
+				new Error(
+					'HTTP request for new count from remote server failed'
+				)
 		),
-		map((data) =>
-			dependencies.dispatch({ type: 'FETCH_SUCCESS', payload: data })
-		),
-		mapLeft((errInfo) =>
-			dependencies.dispatch({ type: 'FETCH_FAILED', payload: errInfo })
-		)
+		map(({ count }) => dispatch({ type: 'SET_COUNT', payload: count })),
+		mapLeft((e) => dispatch({ type: 'COUNT_COMPONENT_ERR', payload: e }))
 	);
+```
 
-// dependency creation function
-const makeDeps = (dispatch: Dispatch<FetchActions>) => ({
-	dispatch,
-	http: axios,
-});
+---
+## Call the hook
+Pass the `FPReader` we just defined to `useFPReducer` in a plain object.  Then pass the initial state and reducer, just like vanilla `useReducer`.
+```
+import {getNewCount} from './handlers'
+import {useFPReducer} from 'react-use-fp'
 
-// component
-const CountComponent: FunctionComponent = (props) => {
-	const [state, dispatch, withDispatch] = useFPMiddleware(
-		fetchedDataReducer,
-		{
-			fetchedData: null,
-		}
-	);
+const CountDisplay: React.FunctionComponent<any> = (props) => {
+	const [state, dispatch] = useFPReducer({
+		GET_COUNT: getNewCount,
+	})(
+		initialState,
+		countReducer
+	)
 
-	// notice that the dependency creation function is NOT curried out
-	withDispatch<FetchActions, Dependencies>('INIT_COUNT')(
-		countHandler,
-		makeDeps
-	);
+	const onClick = (e: any) => dispatch({ type: 'GET_COUNT' });
 
-	return (
-		<div>
-			<h1>
-				Hello! The count is currently {state.count}, but you can update
-				it by clicking!
-			</h1>
-			<button onClick={() => dispatch({ type: 'INIT_COUNT' })}></button>
-		</div>
-	);
+	return <h1 onClick={onClick}>The current count is {state.count}</h1>;
 };
 ```
-Other than the third argument passed to `withDispatch`, this kind of action handler works identically to handlers that only depend on dispatch.  To pass data into an action handler with advanced dependencies, simply add the desired data as a payload in the action that the handler is associated with.
+And that's it!  You've got a typesafe, asynchronous control flow for your component that's cleanly separated from any rendering logic.
