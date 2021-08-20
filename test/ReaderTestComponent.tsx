@@ -15,11 +15,12 @@ const ReaderTestComponent: React.FunctionComponent<TestProps> = ({
 	payload,
 	subscriber,
 }) => {
-	const [countState, countDispatch] = useFPReducer(
-		defaultState,
-		countReducer,
+	// BAD PRACTICE in the real world, ok to type like this for test
+	const [countState, countDispatch] = useFPReducer<any, any, any, any>(
+		{ DO_HANDLER: handler },
+		makeDependencies,
 		subscriber
-	)({ DO_HANDLER: handler }, makeDependencies);
+	)(defaultState, countReducer);
 
 	const onClick = () => countDispatch({ type: 'DO_HANDLER', payload });
 

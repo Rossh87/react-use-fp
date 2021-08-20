@@ -2,11 +2,7 @@ import React, { Dispatch } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ReaderTestComponent from './ReaderTestComponent';
 import { CountAction } from './testReducer';
-import {
-	DependencyCreator,
-	FPReader,
-	PayloadFPReader,
-} from '../src/types';
+import { DependencyCreator, FPReader, PayloadFPReader } from '../src/types';
 import { resetInternals } from '../src/index';
 
 beforeEach(() => {
@@ -31,9 +27,10 @@ describe('handlers that return an IO type', () => {
 	});
 
 	it('injects dependencies correctly', () => {
-		const makeDependencies: DependencyCreator<{ newCount: number }> = (
-			dispatch
-		) => ({ dispatch, newCount: 42 });
+		const makeDependencies: DependencyCreator<
+			CountAction,
+			{ newCount: number }
+		> = (dispatch) => ({ dispatch, newCount: 42 });
 
 		const handler =
 			(a: { dispatch: Dispatch<CountAction>; newCount: number }) =>
@@ -84,13 +81,13 @@ describe('handlers that return an IO type', () => {
 		const payload = 40;
 
 		interface PayloadTestDependencies {
-			dispatch: Dispatch<CountAction>;
 			toAdd: number;
 		}
 
-		const makeDependencies: DependencyCreator<PayloadTestDependencies> = (
-			dispatch
-		) => ({ dispatch, toAdd: 2 });
+		const makeDependencies: DependencyCreator<
+			CountAction,
+			PayloadTestDependencies
+		> = (dispatch) => ({ dispatch, toAdd: 2 });
 
 		const payloadHandler: PayloadFPReader<
 			CountAction,

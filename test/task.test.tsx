@@ -9,7 +9,7 @@ beforeEach(() => resetInternals());
 
 describe('handlers that return a Task type', () => {
 	it('correctly sets state via reducer', async () => {
-		const handler =
+		const handler: FPReader<CountAction> =
 			({ dispatch }) =>
 			() =>
 				new Promise<void>((res) => {
@@ -39,7 +39,7 @@ describe('handlers that return a Task type', () => {
 			newCount: number;
 		}
 
-		const makeDependencies: DependencyCreator<Dependencies> = (
+		const makeDependencies: DependencyCreator<CountAction, Dependencies> = (
 			dispatch
 		) => ({ dispatch, newCount: 42 });
 
@@ -104,11 +104,10 @@ describe('handlers that return a Task type', () => {
 		const payload = 40;
 
 		interface Dependencies {
-			dispatch: Dispatch<CountAction>;
 			toAdd: number;
 		}
 
-		const makeDependencies: DependencyCreator<Dependencies> = (
+		const makeDependencies: DependencyCreator<CountAction, Dependencies> = (
 			dispatch
 		) => ({ dispatch, toAdd: 2 });
 
