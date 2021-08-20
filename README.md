@@ -1,4 +1,5 @@
 # Getting started
+([See the complete docs here.](https://rossh87.github.io/react-use-fp))
 
 ## Installation
 Add package to your React project
