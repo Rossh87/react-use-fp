@@ -125,7 +125,7 @@ And finally, our component.  Notice the **first argument** to `useFPReducer` is 
 const CountDisplay: React.FunctionComponent<any> = (props) => {
 	const [state, dispatch] = useFPReducer({UPDATE_COUNT: countHandler})(initialState, countReducer)
 
-	const onClick = (e) => dispatch({ type: 'GET_COUNT' });
+	const onClick = (e) => dispatch({ type: 'UPDATE_COUNT' });
 
 	return <h1 onClick={onClick}>The current count is: {state.count}</h1>;
 };
