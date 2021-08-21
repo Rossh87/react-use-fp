@@ -39,8 +39,9 @@
   ],
   "scripts": {
     "test": "jest",
-    "prepack": "tsc",
-	"serve-docs": "docker-compose -f docs/docker-compose.yml -p useFP-docs --project-directory $(pwd)/docs up"
+    "prepack": "eslint ./src/** --fix && tsc",
+    "serve-docs": "docker-compose -f docs/docker-compose.yml -p useFP-docs --project-directory $(pwd)/docs up",
+	"lint": "eslint ./src/** --fix"
   },
   "types": "dist/index.d.ts",
   "peerDependencies": {

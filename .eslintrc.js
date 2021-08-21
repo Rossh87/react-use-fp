@@ -21,5 +21,10 @@ module.exports = {
   ],
   rules: {
 	  "unused-imports/no-unused-imports": "error"
+  },
+  settings: {
+	  react: {
+		  version: "latest"
+	  }
   }
 }

@@ -1,4 +1,4 @@
-import { Dispatch, ReducerAction, Reducer } from 'react';
+import { Dispatch } from 'react';
 import { Reader } from 'fp-ts/Reader';
 import { Task } from 'fp-ts/lib/Task';
 import { IO } from 'fp-ts/lib/IO';
