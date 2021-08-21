@@ -31,16 +31,17 @@ export const resetInternals = () => {
 
 export const useFPReducer =
 	<
-		S,
-		A extends { type: string; payload?: any },
-		D extends ReaderDependencies<A, Record<string, any>>,
+		D extends ReaderDependencies<any, Record<string, any>>,
 		R extends Record<string, any>
 	>(
 		actionMap: R,
-		createDependencies?: DependencyCreator<A, D>,
-		subscriber?: (a: A) => void
+		createDependencies?: DependencyCreator<any, D>,
+		subscriber?: (a: any) => void
 	) =>
-	(initial: S, reducer: Reducer<S, A>) => {
+	<S, A extends { type: string; payload?: any }>(
+		initial: S,
+		reducer: Reducer<S, A>
+	) => {
 		const [state, baseDispatch] = useReducer(reducer, initial);
 
 		// build trackers
