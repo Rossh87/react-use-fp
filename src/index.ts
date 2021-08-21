@@ -13,17 +13,17 @@ import {
 	makeSubscribableDispatch,
 } from './helpers';
 import { toMiddleware, toPartialEffect } from './effect';
-import { map as ArrMap } from 'fp-ts/Array';
-import { PayloadFPReader, Handler } from './types';
+import { map as ArrMap, reduce } from 'fp-ts/Array';
+import { Handler } from './types';
 
 // mutable state for handlers
-let handlers: ComposableMiddleware<any>[] = [];
+let dispatchers: Dispatch<any>[] = [];
 let observed: ObservedActions<any> = {};
 const pendingPromises: PendingTracker = { pending: 0 };
 let usedActions = new Set<string>();
 
 export const resetInternals = () => {
-	handlers = [];
+	dispatchers = [];
 	observed = {};
 	usedActions.clear();
 	pendingPromises.pending = 0;
@@ -49,19 +49,18 @@ export const useFPReducer =
 		const subbableDispatch = makeSubscribableDispatch(subscriber);
 
 		// begin business logic
-		const addMiddleware = (mw: ComposableMiddleware<A>) =>
-			handlers.push(mw);
+		const addDispatcher = (dispatcher: (a: A) => void) =>
+			dispatchers.push(dispatcher);
 
 		const withDispatch =
 			(type: string) =>
 			(
 				handler: Handler<A, any, D>,
 				createDependencies?: DependencyCreator<A, D>
-			) =>
+			): ComposableMiddleware<A> =>
 				pipe(
 					toPartialEffect<A>(handler)(type)(createDependencies),
-					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch),
-					addMiddleware
+					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch)
 				);
 
 		/**This only adds a new middleware if the actionMap has keys
@@ -70,20 +69,14 @@ export const useFPReducer =
 		pipe(
 			Object.keys(actionMap),
 			filterAndSetActionTypes(usedActions),
-			ArrMap((key) => {
-				withDispatch(key)(actionMap[key], createDependencies);
-			})
+			ArrMap((key) =>
+				withDispatch(key)(actionMap[key], createDependencies)
+			),
+			reduce(baseDispatch, (next, fn) => fn(baseDispatch)(next)),
+			addDispatcher
 		);
 
-		/**
-		 It would be more efficient to store these pre-composed, and then compose
-		 the PRE-COMPOSED with a new composition whenever we add new middlewares.
-		 */
-		let dispatch = (a: A) =>
-			handlers.reduceRight(
-				(next, fn) => fn(baseDispatch)(next),
-				baseDispatch
-			)(a);
+		const dispatch = (a: A) => dispatchers.forEach((d) => d(a));
 
 		return [
 			state,
