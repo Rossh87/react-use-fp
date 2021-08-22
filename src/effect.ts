@@ -14,6 +14,7 @@ import { bind, Do } from 'fp-ts/Identity';
 import { Dispatch } from 'react';
 import { FPEffectCallStrat, PayloadFPEffectCallStrat } from './strategies';
 import { fromNullable, fold, map as OMap, fromPredicate } from 'fp-ts/Option';
+import { fold as BFold } from 'fp-ts/boolean';
 
 const tagEffect = <A extends Action<any>>({
 	payload,
@@ -27,7 +28,7 @@ const tagEffect = <A extends Action<any>>({
 		)
 	);
 
-export const toPartialEffect =
+export const toPreEffect =
 	<A extends Action<any>>(handler: Handler<A, any, any>) =>
 	(type: A['type']) =>
 	(createDeps?: DependencyCreator<A, any>) =>
@@ -52,25 +53,29 @@ export const toMiddleware =
 				pipe(
 					pe,
 					bind('dependencies', ({ createDependencies }) => {
-						const subscribedDispatch =
-							subscribableDispatch(dispatch);
-
 						// wrangle dispatch function into an object if no
 						// createDependencies function was passed in
-						return pipe(
+						const res = pipe(
 							createDependencies,
 							fromNullable,
 							fold(
-								() => ({ dispatch: subscribedDispatch }),
-								(c) => c(subscribedDispatch)
+								() => ({ dispatch }),
+								(c) => c(dispatch)
 							)
 						);
+						console.log('typeof deps is: ', res);
+						return res;
 					}),
 					bind('payload', () => action.payload),
 					bind('_effectTag', tagEffect),
-					runEffect(promiseTracker),
-					() => next(action)
+					runEffect(promiseTracker)
 				)
+			),
+			// HELLA IMPORTANT to call next regardless of whether this handler
+			// 'takes' the action or not.
+			fold(
+				() => next(action),
+				(_) => next(action)
 			)
 		);
 
@@ -79,13 +84,15 @@ export const runEffect =
 	(effect: Effect<A>) =>
 		pipe(
 			effect,
-			(x) => {
-				return effect;
+			(e) => {
+				console.log('starting to run effect...');
+				console.log('here"s effect:', e);
+				return e;
 			},
 			isFPEffect,
-			(b) =>
-				b
-					? FPEffectCallStrat(effect as FPEffect<A>)
-					: PayloadFPEffectCallStrat(effect as PayloadFPEffect<A>),
+			BFold(
+				() => PayloadFPEffectCallStrat(effect as PayloadFPEffect<A>),
+				() => FPEffectCallStrat(effect as FPEffect<A>)
+			),
 			promiseTracker
 		);

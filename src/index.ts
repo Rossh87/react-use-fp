@@ -12,7 +12,7 @@ import {
 	filterAndSetActionTypes,
 	makeSubscribableDispatch,
 } from './helpers';
-import { toMiddleware, toPartialEffect } from './effect';
+import { toMiddleware, toPreEffect } from './effect';
 import { map as ArrMap, reduce } from 'fp-ts/Array';
 import { Handler } from './types';
 
@@ -60,7 +60,7 @@ export const useFPReducer =
 				createDependencies?: DependencyCreator<A, D>
 			): ComposableMiddleware<A> =>
 				pipe(
-					toPartialEffect<A>(handler)(type)(createDependencies),
+					toPreEffect<A>(handler)(type)(createDependencies),
 					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch)
 				);
 
