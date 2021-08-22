@@ -116,7 +116,8 @@ export const makeActionCreators = <R extends Record<string, any>>(
 		reduce<keyof R, ActionCreators<R>>(
 			{} as ActionCreators<R>,
 			(acc, key) => {
-				acc[key] = (a: any) => ({ type: key, payload: a });
+				// @ts-ignore
+				acc[key] = (a: any) => ({ type: key, payload: a }); //ts-ignore
 				return acc;
 			}
 		)
