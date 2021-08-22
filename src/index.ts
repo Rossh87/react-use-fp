@@ -11,19 +11,20 @@ import {
 	makePendingPromiseTracker,
 	filterAndSetActionTypes,
 	makeSubscribableDispatch,
+	makeActionCreators,
 } from './helpers';
 import { toMiddleware, toPreEffect } from './effect';
-import { map as ArrMap, reduce } from 'fp-ts/Array';
+import { map as ArrMap } from 'fp-ts/Array';
 import { Handler } from './types';
 
 // mutable state for handlers
-let dispatchers: Dispatch<any>[] = [];
+let handlers: ComposableMiddleware<any>[] = [];
 let observed: ObservedActions<any> = {};
 const pendingPromises: PendingTracker = { pending: 0 };
 let usedActions = new Set<string>();
 
 export const resetInternals = () => {
-	dispatchers = [];
+	handlers = [];
 	observed = {};
 	usedActions.clear();
 	pendingPromises.pending = 0;
@@ -50,18 +51,19 @@ export const useFPReducer =
 		const subbableDispatch = makeSubscribableDispatch(subscriber);
 
 		// begin business logic
-		const addDispatcher = (dispatcher: (a: A) => void) =>
-			dispatchers.push(dispatcher);
+		const addMiddleware = (mw: ComposableMiddleware<A>) =>
+			handlers.push(mw);
 
 		const withDispatch =
 			(type: string) =>
 			(
 				handler: Handler<A, any, D>,
 				createDependencies?: DependencyCreator<A, D>
-			): ComposableMiddleware<A> =>
+			) =>
 				pipe(
 					toPreEffect<A>(handler)(type)(createDependencies),
-					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch)
+					toMiddleware<A>(promiseResolutionTracker)(subbableDispatch),
+					addMiddleware
 				);
 
 		/**This only adds a new middleware if the actionMap has keys
@@ -70,17 +72,26 @@ export const useFPReducer =
 		pipe(
 			Object.keys(actionMap),
 			filterAndSetActionTypes(usedActions),
-			ArrMap((key) =>
-				withDispatch(key)(actionMap[key], createDependencies)
-			),
-			reduce(baseDispatch, (next, fn) => fn(baseDispatch)(next)),
-			addDispatcher
+			ArrMap((key) => {
+				withDispatch(key)(actionMap[key], createDependencies);
+			})
 		);
 
-		const dispatch = (a: A) => dispatchers.forEach((d) => d(a));
+		/**
+		 It would be more efficient to store these pre-composed, and then compose
+		 the PRE-COMPOSED with a new composition whenever we add new middlewares.
+		 */
+		let dispatch = (a: A) =>
+			handlers.reduceRight(
+				(next, fn) => fn(baseDispatch)(next),
+				baseDispatch
+			)(a);
+
+		const actions = makeActionCreators(actionMap);
 
 		return [
 			state,
-			dispatch as Dispatch<A | { type: keyof R; payload: any }>,
+			dispatch as Dispatch<A | { type: keyof R; payload?: any }>,
+			actions,
 		] as const;
 	};

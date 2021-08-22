@@ -9,7 +9,9 @@
     "@babel/preset-env": "^7.14.1",
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
+    "@testing-library/dom": "^8.1.0",
     "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.2.1",
     "@types/eslint": "^7",
     "@types/jest": "^26.0.23",
     "@types/node": "^15.6.1",
@@ -41,7 +43,7 @@
     "test": "jest",
     "prepack": "eslint ./src/** --fix && tsc",
     "serve-docs": "docker-compose -f docs/docker-compose.yml -p useFP-docs --project-directory $(pwd)/docs up",
-	"lint": "eslint ./src/** --fix"
+    "lint": "eslint ./src/** --fix"
   },
   "types": "dist/index.d.ts",
   "peerDependencies": {

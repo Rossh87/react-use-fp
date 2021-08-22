@@ -63,7 +63,6 @@ export const toMiddleware =
 								(c) => c(dispatch)
 							)
 						);
-						console.log('typeof deps is: ', res);
 						return res;
 					}),
 					bind('payload', () => action.payload),
@@ -84,11 +83,6 @@ export const runEffect =
 	(effect: Effect<A>) =>
 		pipe(
 			effect,
-			(e) => {
-				console.log('starting to run effect...');
-				console.log('here"s effect:', e);
-				return e;
-			},
 			isFPEffect,
 			BFold(
 				() => PayloadFPEffectCallStrat(effect as PayloadFPEffect<A>),

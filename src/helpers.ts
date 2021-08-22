@@ -4,7 +4,15 @@ import { pipe, flow } from 'fp-ts/lib/function';
 import { chainFirst } from 'fp-ts/lib/Identity';
 import { lookup } from 'fp-ts/Record';
 import { isPromise } from './guards';
-import { ObservedActions, Observer, PendingTracker, Action } from './types';
+import {
+	ObservedActions,
+	Observer,
+	PendingTracker,
+	Action,
+	ActionCreators,
+} from './types';
+import { keys } from 'fp-ts/Record';
+import { reduce } from 'fp-ts/Array';
 
 // side-effectful, but contained by main function
 export const makePendingPromiseTracker =
@@ -98,3 +106,18 @@ export const filterAndSetActionTypes =
 			set.add(str);
 			return true;
 		});
+
+export const makeActionCreators = <R extends Record<string, any>>(
+	actionMap: R
+) =>
+	pipe(
+		actionMap,
+		keys,
+		reduce<keyof R, ActionCreators<R>>(
+			{} as ActionCreators<R>,
+			(acc, key) => {
+				acc[key] = (a: any) => ({ type: key, payload: a });
+				return acc;
+			}
+		)
+	);

@@ -107,9 +107,11 @@ type ExtractPayloadType<T> = T extends PayloadFPReader<any, infer P, any>
 	? P
 	: undefined;
 
-type ActionCreators<T> = {
-	[K in keyof T]: (p: ExtractPayloadType<T[K]>) => {
-		type: K;
-		payload: ExtractPayloadType<T[K]>;
-	};
+export type ActionCreators<T> = {
+	[K in keyof T]: ExtractPayloadType<T[K]> extends undefined
+		? () => { type: K }
+		: (p: ExtractPayloadType<T[K]>) => {
+				type: K;
+				payload: ExtractPayloadType<T[K]>;
+		  };
 };

@@ -41,7 +41,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@babel/preset-env", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.14.1"],
             ["@babel/preset-react", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.13.13"],
             ["@babel/preset-typescript", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.13.0"],
+            ["@testing-library/dom", "npm:8.1.0"],
             ["@testing-library/react", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:11.2.7"],
+            ["@testing-library/user-event", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:13.2.1"],
             ["@types/eslint", "npm:7.28.0"],
             ["@types/jest", "npm:26.0.23"],
             ["@types/node", "npm:15.6.1"],
@@ -3278,6 +3280,21 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["pretty-format", "npm:26.6.2"]
           ],
           "linkType": "HARD",
+        }],
+        ["npm:8.1.0", {
+          "packageLocation": "./.yarn/cache/@testing-library-dom-npm-8.1.0-13653e5c71-5b8c04123a.zip/node_modules/@testing-library/dom/",
+          "packageDependencies": [
+            ["@testing-library/dom", "npm:8.1.0"],
+            ["@babel/code-frame", "npm:7.12.13"],
+            ["@babel/runtime", "npm:7.14.0"],
+            ["@types/aria-query", "npm:4.2.1"],
+            ["aria-query", "npm:4.2.2"],
+            ["chalk", "npm:4.1.1"],
+            ["dom-accessibility-api", "npm:0.5.7"],
+            ["lz-string", "npm:1.4.4"],
+            ["pretty-format", "npm:27.0.2"]
+          ],
+          "linkType": "HARD",
         }]
       ]],
       ["@testing-library/react", [
@@ -3304,6 +3321,29 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@types/react",
             "react-dom",
             "react"
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@testing-library/user-event", [
+        ["npm:13.2.1", {
+          "packageLocation": "./.yarn/cache/@testing-library-user-event-npm-13.2.1-b866d850fa-fea514ffc8.zip/node_modules/@testing-library/user-event/",
+          "packageDependencies": [
+            ["@testing-library/user-event", "npm:13.2.1"]
+          ],
+          "linkType": "SOFT",
+        }],
+        ["virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:13.2.1", {
+          "packageLocation": "./.yarn/$$virtual/@testing-library-user-event-virtual-851dc8bc9a/0/cache/@testing-library-user-event-npm-13.2.1-b866d850fa-fea514ffc8.zip/node_modules/@testing-library/user-event/",
+          "packageDependencies": [
+            ["@testing-library/user-event", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:13.2.1"],
+            ["@babel/runtime", "npm:7.14.0"],
+            ["@testing-library/dom", "npm:8.1.0"],
+            ["@types/testing-library__dom", null]
+          ],
+          "packagePeers": [
+            "@testing-library/dom",
+            "@types/testing-library__dom"
           ],
           "linkType": "HARD",
         }]
@@ -5249,6 +5289,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/dom-accessibility-api-npm-0.5.5-7265d17f15-255aa6ae5a.zip/node_modules/dom-accessibility-api/",
           "packageDependencies": [
             ["dom-accessibility-api", "npm:0.5.5"]
+          ],
+          "linkType": "HARD",
+        }],
+        ["npm:0.5.7", {
+          "packageLocation": "./.yarn/cache/dom-accessibility-api-npm-0.5.7-6a9d6f9ebe-93b1461301.zip/node_modules/dom-accessibility-api/",
+          "packageDependencies": [
+            ["dom-accessibility-api", "npm:0.5.7"]
           ],
           "linkType": "HARD",
         }]
@@ -9143,7 +9190,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@babel/preset-env", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.14.1"],
             ["@babel/preset-react", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.13.13"],
             ["@babel/preset-typescript", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:7.13.0"],
+            ["@testing-library/dom", "npm:8.1.0"],
             ["@testing-library/react", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:11.2.7"],
+            ["@testing-library/user-event", "virtual:ef32e8002ec993934a4f00962819de5946f80722c6fac6eb1608d6bbfa0c9490fa13cd738278a6197871d92a2273c743e5a3238f1103ce649d62a8c37925676f#npm:13.2.1"],
             ["@types/eslint", "npm:7.28.0"],
             ["@types/jest", "npm:26.0.23"],
             ["@types/node", "npm:15.6.1"],

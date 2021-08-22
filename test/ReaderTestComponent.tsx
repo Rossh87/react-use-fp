@@ -3,6 +3,11 @@ import { useFPReducer } from '../src/index';
 import { FPReader } from '../src/types';
 import countReducer, { CountAction, defaultState } from './testReducer';
 
+/**The untyped nature of this component makes it fairly useless for testing type compatibility,
+ * and can be flaky in certain conditions.  Future tests will be more meaningful if they DON'T
+ * depend on this component.
+ */
+
 interface TestProps {
 	handler?: any;
 	makeDependencies?: any;
@@ -15,8 +20,6 @@ interface TestProps {
 const nameHandler: FPReader<CountAction> =
 	({ dispatch }) =>
 	() => {
-		console.log('disp is:', typeof dispatch);
-		console.log('name handler hit');
 		dispatch({ type: 'SET_NAME', payload: 'NewName' });
 	};
 
