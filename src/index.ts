@@ -95,3 +95,5 @@ export const useFPReducer =
 			actions,
 		] as const;
 	};
+
+export { Action, FPReader, PayloadFPReader, DependencyCreator } from './types';
