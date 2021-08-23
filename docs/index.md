@@ -96,14 +96,14 @@ import {getNewCount} from './handlers'
 import {useFPReducer} from 'react-use-fp'
 
 const CountDisplay: React.FunctionComponent<any> = (props) => {
-	const [state, dispatch] = useFPReducer({
+	const [state, dispatch, actions] = useFPReducer({
 		GET_COUNT: getNewCount,
 	})(
 		initialState,
 		countReducer
 	)
 
-	const onClick = (e: any) => dispatch({ type: 'GET_COUNT' });
+	const onClick = (e: any) => dispatch(actions.GET_COUNT());
 
 	return <h1 onClick={onClick}>The current count is {state.count}</h1>;
 };

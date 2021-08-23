@@ -120,12 +120,12 @@ const countHandler =
 
 ```
 
-And finally, our component.  Notice the **first argument** to `useFPReducer` is a plain object with one property.  This object's single key will become the `Action` type that triggers our handler function, and the associated property is the function itself.  In the second call, we pass in the inital state and reducer we defined above.  `state` and `dispatch` are exactly what you expect them to be--use them as if they were returned from vanilla `useReducer`.
+And finally, our component.  Notice the **first argument** to `useFPReducer` is a plain object with one property.  This object's single key will become the `Action` type that triggers our handler function, and the associated property is the function itself.  In the second call, we pass in the inital state and reducer we defined above.  `state` and `dispatch` are exactly what you expect them to be--use them as if they were returned from vanilla `useReducer`.  The thrird item returned is an object populated with typesafe action-creators.  Each property on the `actions` object is a function that can be called with a payload of the appropriate type, and returns the correct action to initiate the associated handler.
 ```
 const CountDisplay: React.FunctionComponent<any> = (props) => {
-	const [state, dispatch] = useFPReducer({UPDATE_COUNT: countHandler})(initialState, countReducer)
+	const [state, dispatch, actions] = useFPReducer({UPDATE_COUNT: countHandler})(initialState, countReducer)
 
-	const onClick = (e) => dispatch({ type: 'UPDATE_COUNT' });
+	const onClick = (e) => dispatch(actions.UPDATE_COUNT());
 
 	return <h1 onClick={onClick}>The current count is: {state.count}</h1>;
 };
@@ -141,9 +141,11 @@ const countHandler = (newCount: number) =>
 ...and add a payload to the action that initiates the action creator
 ```
 const CountDisplay: React.FunctionComponent<{newCount: number}> = ({newCount}) => {
-	const [state, dispatch] = useFPReducer({UPDATE_COUNT: countHandler})(initialState, countReducer)
+	const [state, dispatch, actions] = useFPReducer({UPDATE_COUNT: countHandler})(initialState, countReducer)
 
-	const onClick = (e) => dispatch({ type: 'UPDATE_COUNT', payload: newCount });
+	// this time, actions.UPDATE_COUNT should be called with a payload, since the counthandler needs
+	// input data
+	const onClick = (e) => dispatch(actions.UPDATE_COUNT(newCount));
 
 	return <h1 onClick={onClick}>The current count is: {state.count}</h1>;
 };

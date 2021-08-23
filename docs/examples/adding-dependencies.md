@@ -63,7 +63,7 @@ const PaymentManager: React.FunctionComponent<UserProfile> = ({ userID }) => {
 	// Note we can use other hooks for local state as well
 	const [paymentAmount, setPaymentAmount] = React.useState(0);
 
-	const [state, dispatch] = useFPReducer(
+	const [state, dispatch, actions] = useFPReducer(
 		{
 			INIT_PAYMENT: handlePaymentRequest,
 		},
@@ -72,7 +72,7 @@ const PaymentManager: React.FunctionComponent<UserProfile> = ({ userID }) => {
 
 	const onSubmit = (e: any) => {
 		e.preventDefault();
-		dispatch({type: 'INIT_PAYMENT', payload: paymentAmount});
+		dispatch(actions.INIT_PAYMENT(paymentAmount));
 	};
 
 	return (
